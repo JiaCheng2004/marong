@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.6)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-set(BOT_NAME "templatebot")
+set(BOT_NAME "marong")
 
 project(${BOT_NAME})
 aux_source_directory("src" coresrc)
