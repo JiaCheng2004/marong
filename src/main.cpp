@@ -2,14 +2,16 @@
 #include <marong/helper.h>
 #include <sstream>
 #include <iostream>
+#include <ctime>
+#include <time.h>
 
 using json = nlohmann::json;
 
 int main(int argc, char const *argv[])
 {
-    
-    std::ifstream configfile("../config/config.json");
-    std::ifstream settings_file("../config/settings.json");
+
+    std::ifstream configfile("../.config/config.json");
+    std::ifstream settings_file("../.config/settings.json");
 
     json configdocument = json::parse(configfile);
     json settings = json::parse(settings_file);
@@ -17,13 +19,12 @@ int main(int argc, char const *argv[])
     configfile.close();
     settings_file.close();
 
-    /* Setup the bot */
-    dpp::cluster bot(configdocument["token"], dpp::i_default_intents | dpp::i_guild_members );
+    dpp::cluster bot(configdocument["token"], dpp::i_all_intents);
 
-    /* Output simple log messages to stdout */
+    time_t timer;
+
     bot.on_log(dpp::utility::cout_logger());
 
-    /* Handle slash command */
     bot.on_slashcommand([&bot, &settings](const dpp::slashcommand_t& event) {
         if (settings["channels"]["chatbots"]["gpt"].contains(event.command.get_command_name())) {
             dpp::guild Guild = event.command.get_guild();
@@ -50,13 +51,13 @@ int main(int argc, char const *argv[])
                         auto channel = callback.get<dpp::channel>();
                         settings["channels"]["chatbots"]["gpt"][gptName]["id"] = static_cast<int64_t>(channel.id);
 
-                        std::ofstream output_file("../config/settings.json");
+                        std::ofstream output_file("../.config/settings.json");
                         if (output_file.is_open()) {
                             output_file << settings.dump(4) << std::endl;
                             output_file.close();
-                            event.reply("成功创建了支持 " + std::string(chatbot["fullname"]) + " API 的聊天频道");
+                            event.reply("成功创建了支持 " + std::string(chatbot["fullname"]) + " 的聊天频道");
                         } else {
-                            event.reply("成功创建了支持 " + std::string(chatbot["fullname"]) + " API 的聊天频道, 但无法保存频道的ID到文件");
+                            event.reply("成功创建了支持 " + std::string(chatbot["fullname"]) + " 的聊天频道, 但无法保存频道的ID到文件");
                         }
                     });
                 } else {
@@ -68,18 +69,111 @@ int main(int argc, char const *argv[])
         }
     });
 
-    /* Register slash command here in on_ready */
-    bot.on_ready([&bot](const dpp::ready_t& event) {
-        /* Wrap command registration in run_once to make sure it doesnt run on every full reconnection */
-        if (dpp::run_once<struct register_bot_commands>()) {
-            bot.global_command_create(dpp::slashcommand("gpt4-turbo", "仅服务器拥有者或特级权限管理员: 创建一个支持GPT4 Turbo的文本频道", bot.me.id));
-            bot.global_command_create(dpp::slashcommand("gpt4", "仅服务器拥有者或特级权限管理员: 创建一个支持 GPT4 的文本频道", bot.me.id));
-            bot.global_command_create(dpp::slashcommand("gemini", "仅服务器拥有者或特级权限管理员: 创建一个支持 Gemini Pro Ultra 的文本频道", bot.me.id));
-            bot.global_command_create(dpp::slashcommand("claude3", "仅服务器拥有者或特级权限管理员: 创建一个支持 Claude 3 Opus 的文本频道", bot.me.id));
+    bot.on_message_create([&bot, &timer, settings, configdocument](const dpp::message_create_t& event) {
+        if (event.msg.author.is_bot()){
+            return;
+        }
+
+        auto channelId = static_cast<int64_t>(event.msg.channel_id);
+        if (channelId == static_cast<int64_t>(settings["channels"]["chatbots"]["gpt"]["chatter"]["id"])) {
+            std::string prompt = event.msg.content;
+            std::vector<dpp::attachment> attachments_vect = event.msg.attachments;
+            if (!attachments_vect.empty()) {
+                event.reply("此频道 __**暂时**__ 不支持文字文件", true);
+                return;
+            } else {
+                std::string response = QingYunKe_API(prompt)["content"];
+                replaceAll(response, "{br}", "\n");
+                event.reply(standardMessageFileWrapper(channelId, response), true);
+            }
+        }
+
+        else if (channelId == static_cast<int64_t>(settings["channels"]["chatbots"]["gpt"]["claude3"]["id"])) {
+            std::string prompt = event.msg.content;
+            std::vector<dpp::attachment> attachments_vect = event.msg.attachments;
+            if (!attachments_vect.empty()) {
+                event.reply("此频道 __**暂时**__ 不支持文字文件", true);
+                return;
+            } else {
+                json response = Claude3_API(prompt, configdocument["claude-key"]);
+                event.reply(standardMessageFileWrapper(channelId, response["content"][0]["text"]), true);
+            }
+        }
+
+        else if (channelId == static_cast<int64_t>(settings["channels"]["chatbots"]["gpt"]["gemini"]["id"])) {
+            std::string prompt = event.msg.content;
+            std::vector<dpp::attachment> attachments_vect = event.msg.attachments;
+            if (!attachments_vect.empty()) {
+                event.reply("此频道 __**暂时**__ 不支持文字文件", true);
+                return;
+            } else {
+                json response = Gemini_API(prompt, configdocument["gemini-key"]);
+                try {
+                    event.reply(standardMessageFileWrapper(channelId, response["candidates"][0]["content"]["parts"][0]["text"]), true);
+                } catch (const nlohmann::json::exception &e) {
+                    event.reply("错误代码" + to_string(response["code"]) + "：回复异常", true);
+                }
+            }
+        }
+
+        else if (channelId == static_cast<int64_t>(settings["channels"]["chatbots"]["gpt"]["gpt4"]["id"])) {
+            std::string prompt = event.msg.content;
+            std::vector<dpp::attachment> attachments_vect = event.msg.attachments;
+            if (!attachments_vect.empty()) {
+                event.reply("此频道 __**暂时**__ 不支持文字文件", true);
+                return;
+                for (dpp::attachment& attachment: attachments_vect){
+                    std::string file_type = getStringBeforeSlash(attachment.content_type);
+                    if (file_type == "text"){
+
+                    } else if (file_type == "image"){
+                        event.reply("此频道不支持图片文件 只支持文字和文字文件 但是 Gemini Pro 频道支持图片文件", true);
+                        return;
+                    } else {
+                        event.reply("此频道不支持此类型文件 只支持文字和文字文件", true);
+                    }
+                }
+            }
+
+            json response = GPT4_API(prompt, configdocument["openai-key"], "gpt-4");
+            event.reply(standardMessageFileWrapper(channelId, response["choices"][0]["message"]["content"]), true);
+        }
+
+        else if (channelId == static_cast<int64_t>(settings["channels"]["chatbots"]["gpt"]["gpt4-turbo"]["id"])) {
+            std::string prompt = event.msg.content;
+            std::vector<dpp::attachment> attachments_vect = event.msg.attachments;
+            if (!attachments_vect.empty()) {
+                event.reply("此频道 __**暂时**__ 不支持文字文件", true);
+                return;
+                for (dpp::attachment& attachment: attachments_vect){
+                    std::string file_type = getStringBeforeSlash(attachment.content_type);
+                    if (file_type == "text"){
+
+                    } else if (file_type == "image"){
+                        event.reply("此频道不支持图片文件 只支持文字和文字文件 但是 Gemini Pro 频道支持图片文件", true);
+                        return;
+                    } else {
+                        event.reply("此频道不支持此类型文件 只支持文字和文字文件", true);
+                    }
+                }
+            }
+
+            json response = GPT4_API(prompt, configdocument["openai-key"], "gpt-4-turbo-preview");
+            event.reply(standardMessageFileWrapper(channelId, response["choices"][0]["message"]["content"]), true);
         }
     });
 
-    /* Start the bot */
+    bot.on_ready([&bot](const dpp::ready_t& event) {
+
+        if (dpp::run_once<struct register_bot_commands>()) {
+            bot.global_command_create(dpp::slashcommand("gpt4-turbo", "仅服务器拥有者或特级权限管理员: 创建一个 GPT4 Turbo 的频道", bot.me.id));
+            bot.global_command_create(dpp::slashcommand("gpt4", "仅服务器拥有者或特级权限管理员: 创建一个 GPT4 的频道", bot.me.id));
+            bot.global_command_create(dpp::slashcommand("gemini", "仅服务器拥有者或特级权限管理员: 创建一个 Gemini Pro Ultra 的频道", bot.me.id));
+            bot.global_command_create(dpp::slashcommand("claude3", "仅服务器拥有者或特级权限管理员: 创建一个 Claude 3 Opus 的频道", bot.me.id));
+            bot.global_command_create(dpp::slashcommand("chatter", "仅服务器拥有者或特级权限管理员: 创建一个可以和 marong闲聊的频道", bot.me.id));
+        }
+    });
+
     bot.start(dpp::st_wait);
 
     return 0;
