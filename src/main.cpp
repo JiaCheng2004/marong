@@ -29,7 +29,7 @@ int main(int argc, char const *argv[])
         if (settings["channels"]["chatbots"]["gpt"].contains(event.command.get_command_name())) {
             dpp::guild Guild = event.command.get_guild();
             dpp::snowflake UserID = event.command.get_issuing_user().id;
-            if ((Guild.owner_id == UserID) || (has_role(event.command.member, settings["roles"]["SUPREME_ADMIN"]))){
+            if ((Guild.owner_id == UserID) || (has_role(event.command.member, settings["roles"]["PRIVILEGED_ADMIN"]))){
                 if (!has_channel(Guild,  settings["channels"]["chatbots"]["category"]["id"])){
                     dpp::channel newCat = newCategory( settings["channels"]["chatbots"]["category"]["label"], Guild.id, 0);
                     settings["channels"]["chatbots"]["category"]["id"] = newCat.id;
@@ -170,7 +170,7 @@ int main(int argc, char const *argv[])
             bot.global_command_create(dpp::slashcommand("gpt4", "仅服务器拥有者或特级权限管理员: 创建一个 GPT4 的频道", bot.me.id));
             bot.global_command_create(dpp::slashcommand("gemini", "仅服务器拥有者或特级权限管理员: 创建一个 Gemini Pro Ultra 的频道", bot.me.id));
             bot.global_command_create(dpp::slashcommand("claude3", "仅服务器拥有者或特级权限管理员: 创建一个 Claude 3 Opus 的频道", bot.me.id));
-            bot.global_command_create(dpp::slashcommand("chatter", "仅服务器拥有者或特级权限管理员: 创建一个可以和 marong闲聊的频道", bot.me.id));
+            bot.global_command_create(dpp::slashcommand("chatter", "仅服务器拥有者或特级权限管理员: 创建一个可以和 marong 闲聊的频道", bot.me.id));
         }
     });
 
