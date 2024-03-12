@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iostream>
 #include <curl/curl.h>
+#include <random>
 
 #define MESSAGE_LENGTH_LIMIT 2001
 
@@ -39,3 +40,5 @@ nlohmann::json GPT4_API(std::string prompt, std::string OPENAI_API_KEY, std::str
 nlohmann::json Gemini_API(const std::string prompt, const std::string KEY);
 
 nlohmann::json Claude3_API(const std::string prompt, const std::string KEY);
+
+int getRandomIndex(int length);

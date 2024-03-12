@@ -111,7 +111,13 @@ int main(int argc, char const *argv[])
                 try {
                     event.reply(standardMessageFileWrapper(channelId, response["candidates"][0]["content"]["parts"][0]["text"]), true);
                 } catch (const nlohmann::json::exception &e) {
-                    event.reply("错误代码" + to_string(response["code"]) + "：回复异常", true);
+                    std::cerr << to_string(response) << std::endl;
+                    try {
+                        json response = Gemini_API("您的名字叫兔子, 请像对待老板一样用短短一句话, 萌萌哒礼貌的语气来跟我道歉说 我回答不了您这个问题哦, 记得加上可爱的表情", configdocument["gemini-key"]);
+                        event.reply(standardMessageFileWrapper(channelId, response["candidates"][0]["content"]["parts"][0]["text"]), true);
+                    } catch (const nlohmann::json::exception &e) {                        
+                        event.reply(settings["channels"]["chatbots"]["catagory"]["error"][getRandomIndex(settings["channels"]["chatbots"]["catagory"]["error"].size()-1)], true);
+                    }
                 }
             }
         }
