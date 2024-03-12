@@ -1,12 +1,8 @@
-Language/Langauge: 
-1. [English](#README.md)
-2. [Chinese/中文](#Chinese.md)
+# Discord Bot Marong
+[![en](https://img.shields.io/badge/英文-English-red.svg)](https://github.com/JiaCheng2004/dpp-marong/blob/main/README.md)
+[![zh](https://img.shields.io/badge/中文-Chinese-blue.svg)](https://github.com/JiaCheng2004/dpp-marong/blob/main/README.zh.md)
 
 ---
-
-### English
-
-# Discord Bot Marong
 
 ## Description
 Discord Bot Marong is a Discord bot built based on the [D++](https://dpp.dev) library designed for the [AIMS ESPORTS](https://discord.gg/aimsesports) Discord server. You can try it out at the [AIMS ESPORTS Discord Server](https://discord.gg/aimsesports).
