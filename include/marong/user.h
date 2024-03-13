@@ -35,6 +35,12 @@ void remove_restricted(nlohmann::json& users, std::string& userid, dpp::snowflak
 // Return true if user has a personal music channel, else false
 bool has_personal_music_channel(nlohmann::json& users, std::string& userid);
 
+//Remove the personal music channel if there have one.
+void remove_personal_music_channel(nlohmann::json& users, std::string& userid);
+
+//Reset the personal music channel to default if there have one.
+void reset_personal_music_channel(nlohmann::json& users, std::string& userid);
+
 // Change user's personal-music-channel to true if false, to false if true
 void toggle_personal_music_channel(nlohmann::json& users, std::string& userid);
 
@@ -78,7 +84,7 @@ void create_playlist(nlohmann::json& users, std::string& userid, std::string& pl
 void remove_playlist(nlohmann::json& users, std::string& userid, std::string& playlist);
 
 // Rename a playlist in user's playlist, user can't rename their default playlist "favorite"
-void rename_playlist(nlohmann::json& users, std::string& userid, std::string& playlist, std::string& new_playlist)
+void rename_playlist(nlohmann::json& users, std::string& userid, std::string& playlist, std::string& new_playlist);
 
 // Check if user's playlist have this playlist.
 bool has_playlists(nlohmann::json& users, std::string& userid, std::string& playlist);
