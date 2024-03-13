@@ -1,3 +1,8 @@
+#pragma once
+
+#ifndef HELPER_H_
+#define HELPER_H_
+
 #include <dpp/dpp.h>
 #include <dpp/nlohmann/json.hpp>
 #include <sstream>
@@ -5,7 +10,7 @@
 #include <curl/curl.h>
 #include <random>
 
-#define MESSAGE_LENGTH_LIMIT 2001
+#define MESSAGE_LENGTH_LIMIT 2000
 
 bool has_role(dpp::guild_member M, dpp::snowflake role_id);
 
@@ -42,3 +47,5 @@ nlohmann::json Gemini_API(const std::string prompt, const std::string KEY);
 nlohmann::json Claude3_API(const std::string prompt, const std::string KEY);
 
 int getRandomIndex(int length);
+
+#endif

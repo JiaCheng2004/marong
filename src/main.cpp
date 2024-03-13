@@ -1,31 +1,29 @@
 #include <marong/marong.h>
-#include <marong/helper.h>
-#include <sstream>
-#include <iostream>
-#include <ctime>
-#include <time.h>
 
 using json = nlohmann::json;
 
-int main(int argc, char const *argv[])
-{
+int main(int argc, char const *argv[]) {
 
-    std::ifstream configfile("../.config/config.json");
-    std::ifstream settings_file("../.config/settings.json");
+    std::ifstream configfile("../config/config.json");
+    std::ifstream settings_file("../config/settings.json");
+    std::ifstream users_file("../config/users.json");
 
     json configdocument = json::parse(configfile);
     json settings = json::parse(settings_file);
+    json users = json::parse(users_file);
 
     configfile.close();
     settings_file.close();
 
     dpp::cluster bot(configdocument["token"], dpp::i_all_intents);
 
+    std::map<std::string, dpp::channel> userCurrentVC;
+
     time_t timer;
 
     bot.on_log(dpp::utility::cout_logger());
 
-    bot.on_slashcommand([&bot, &settings](const dpp::slashcommand_t& event) {
+    bot.on_slashcommand([&bot, &settings, &users](const dpp::slashcommand_t& event) {
         if (settings["channels"]["chatbots"]["gpt"].contains(event.command.get_command_name())) {
             dpp::guild Guild = event.command.get_guild();
             dpp::snowflake UserID = event.command.get_issuing_user().id;
@@ -51,7 +49,7 @@ int main(int argc, char const *argv[])
                         auto channel = callback.get<dpp::channel>();
                         settings["channels"]["chatbots"]["gpt"][gptName]["id"] = static_cast<int64_t>(channel.id);
 
-                        std::ofstream output_file("../.config/settings.json");
+                        std::ofstream output_file("../config/settings.json");
                         if (output_file.is_open()) {
                             output_file << settings.dump(4) << std::endl;
                             output_file.close();
@@ -66,8 +64,20 @@ int main(int argc, char const *argv[])
             } else {
                 event.reply("仅服务器拥有者或特级权限管理员才能使用此指令");
             }
+        } else if (event.command.get_command_name() == "newuser"){
+            std::ofstream output_file("../config/users.json");
+            dpp::guild_member Member = event.command.member;
+            newUser(users, Member.user_id.str(), Member.get_nickname());
+            if (output_file.is_open()) {
+                output_file << users.dump(4) << std::endl;
+                output_file.close();
+                event.reply("registered!!");
+            } else {
+                event.reply("failed to register...");
+            }
         }
     });
+
 
     bot.on_message_create([&bot, &timer, settings, configdocument](const dpp::message_create_t& event) {
         if (event.msg.author.is_bot()){
@@ -169,6 +179,29 @@ int main(int argc, char const *argv[])
         }
     });
 
+    bot.on_voice_state_update([&bot, &settings, &users, &channel_map](const dpp::voice_state_update_t& event){
+        std::string UserID = event.state.user_id.str();
+
+        // Check if channel is a valid voice channel to handle
+        if settings["public-voice-channels"].contains(event.state.channel_id)
+            return;
+        
+        // if user join/switch to a voice channel
+        if (event.state.channel_id != 0){
+            if (channel_map.find(UserID) != channel_map.end()) {
+                
+            } else {
+                channel_map[UserID] = bot.channel_get_sync(event.state.channel_id);
+            }
+        } else { // else if a user disconnect from a voice channel.
+            if (channel_map.find(UserID) != channel_map.end()) {
+                dpp::voice voiceChannel = channel_map[UserID];
+                channel_map.erase(UserID);
+            }
+        }
+    });
+
+
     bot.on_ready([&bot](const dpp::ready_t& event) {
 
         if (dpp::run_once<struct register_bot_commands>()) {
@@ -177,6 +210,7 @@ int main(int argc, char const *argv[])
             bot.global_command_create(dpp::slashcommand("gemini", "仅服务器拥有者或特级权限管理员: 创建一个 Gemini Pro Ultra 的频道", bot.me.id));
             bot.global_command_create(dpp::slashcommand("claude3", "仅服务器拥有者或特级权限管理员: 创建一个 Claude 3 Opus 的频道", bot.me.id));
             bot.global_command_create(dpp::slashcommand("chatter", "仅服务器拥有者或特级权限管理员: 创建一个可以和 marong 闲聊的频道", bot.me.id));
+            bot.global_command_create(dpp::slashcommand("newuser", "创建用户", bot.me.id));
         }
     });
 

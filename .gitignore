@@ -5,3 +5,5 @@ out/
 .idea/
 tmp/
 config.json
+users.json
+settings.json
