@@ -17,7 +17,8 @@ int main(int argc, char const *argv[]) {
 
     dpp::cluster bot(configdocument["token"], dpp::i_all_intents);
 
-    std::map<std::string, dpp::channel> userCurrentVC;
+    std::map<std::string, dpp::channel> user_voice_map;
+    std::map<std::string, std::vector<std::pair<std::string, int>>> channel_map;
 
     time_t timer;
 
@@ -123,7 +124,7 @@ int main(int argc, char const *argv[]) {
                 } catch (const nlohmann::json::exception &e) {
                     std::cerr << to_string(response) << std::endl;
                     try {
-                        json response = Gemini_API("您的名字叫兔子, 请像对待老板一样用短短一句话, 萌萌哒礼貌的语气来跟我道歉说 我回答不了您这个问题哦, 记得加上可爱的表情", configdocument["gemini-key"]);
+                        json response = Gemini_API("请像对待老板一样用短短一句话, 萌萌哒礼貌的语气来跟我道歉说 双子星回答不了您的问题哦(记得一定要加上可爱的表情哦)", configdocument["gemini-key"]);
                         event.reply(standardMessageFileWrapper(channelId, response["candidates"][0]["content"]["parts"][0]["text"]), true);
                     } catch (const nlohmann::json::exception &e) {                        
                         event.reply(settings["channels"]["chatbots"]["catagory"]["error"][getRandomIndex(settings["channels"]["chatbots"]["catagory"]["error"].size()-1)], true);
@@ -179,24 +180,144 @@ int main(int argc, char const *argv[]) {
         }
     });
 
-    bot.on_voice_state_update([&bot, &settings, &users, &channel_map](const dpp::voice_state_update_t& event){
-        std::string UserID = event.state.user_id.str();
+    bot.on_voice_state_update([&bot, &settings, &users, &user_voice_map, &channel_map](const dpp::voice_state_update_t& event) -> dpp::task<void> {
 
-        // Check if channel is a valid voice channel to handle
-        if settings["public-voice-channels"].contains(event.state.channel_id)
-            return;
+        std::string UserID = event.state.user_id.str();
+        std::string ChannelID = event.state.channel_id.str();
+        std::string GuildID = event.state.guild_id.str();
         
-        // if user join/switch to a voice channel
+        dpp::guild_member Member = bot.guild_get_member_sync(event.state.guild_id, event.state.user_id);
+        std::pair<std::string, int> user_info = std::make_pair(UserID, 1);
+        
         if (event.state.channel_id != 0){
-            if (channel_map.find(UserID) != channel_map.end()) {
-                
-            } else {
-                channel_map[UserID] = bot.channel_get_sync(event.state.channel_id);
+
+                dpp::confirmation_callback_t channel_response = co_await bot.co_channel_get(event.state.channel_id);
+                dpp::channel voiceChannel = channel_response.get<dpp::channel>();
+                user_voice_map[UserID] = voiceChannel;
+
+            if (user_voice_map.find(UserID) != user_voice_map.end()) { // joining a voice channel
+
+                // Check if the destination channel is empty
+                if (channel_map.find(ChannelID) != channel_map.end()){ // destination channel is empty
+                    // Push user_info to the array of destination channel
+                    channel_map[ChannelID].push_back(user_info);  
+                    
+                    // Don't need to Sort the array of destination channel because it only have one user
+
+                    // Update the name of destination voice channel
+                    voiceChannel.set_name(get_supertitle(users, UserID));
+                    bot.channel_edit(voiceChannel);
+                } else {
+                    // Initialize destination channel with an empty vector of pairs <std::string, int>
+                    channel_map[ChannelID] = std::vector<std::pair<std::string, int>>();
+                    // Push user_info to the array of destination channel
+                    channel_map[ChannelID].push_back(user_info);
+
+                    // Sort the array of destination channel
+                    insertionSort(channel_map[ChannelID]); 
+                    
+                    // Update the name of destination voice channel
+
+                    voiceChannel.set_name(get_supertitle(users, channel_map[ChannelID][0].first));
+                    bot.channel_edit(voiceChannel);
+                }
+
+            } else { // else if the user switch a voice channel
+                // Switch to new voice Channel case:
+
+                // Get the previous voice channel
+                dpp::channel prevChannel = user_voice_map[UserID];
+
+                // Check if the previous voice channel is going to be empty
+                if (channel_map[voiceChannel.id.str()].size() == 1) { // is going to be empty
+                    channel_map.erase(ChannelID);
+
+                    // Set the the voice channel's name that user was in back to orignal 
+                    std::string originalName = settings["channels"]["public-voice-channels"][prevChannel.id.str()]["name"];
+                    prevChannel.set_name(originalName);
+                    bot.channel_edit(prevChannel);
+                } else {
+                    // Iterating over the vector to find and remove the pair
+                    auto& vectorToRemoveFrom = channel_map[voiceChannel.id.str()];
+                    for (auto it = vectorToRemoveFrom.begin(); it != vectorToRemoveFrom.end(); ++it) {
+                        if (it->first == UserID) {
+                            vectorToRemoveFrom.erase(it);
+                            break;
+                        }
+                    }
+
+                    // Sort the array of destination channel
+                    insertionSort(channel_map[ChannelID]); 
+                    // Update the name of previous voice channel
+                    prevChannel.set_name(get_supertitle(users, channel_map[ChannelID][0].first));
+                    bot.channel_edit(prevChannel);
+                }
+
+                // Check if the destination channel is empty
+                if (channel_map.find(ChannelID) != channel_map.end()){ // destination channel is not empty
+                    // Push user_info to the array of destination channel
+                    channel_map[ChannelID].push_back(user_info);
+
+                    // Sort the array of destination channel
+                    insertionSort(channel_map[ChannelID]); 
+                    
+                    // Update the name of destination voice channel
+
+                    voiceChannel.set_name(get_supertitle(users, channel_map[ChannelID][0].first));
+                    bot.channel_edit(voiceChannel);
+                } else {
+                    // Initialize destination channel with an empty vector of pairs <std::string, int>
+                    channel_map[ChannelID] = std::vector<std::pair<std::string, int>>();
+                    // Push user_info to the array of destination channel
+                    channel_map[ChannelID].push_back(user_info);
+
+                    // Don't need to sort the array of destination channel because it only have one user
+
+                    // Update the name of destination voice channel
+                    voiceChannel.set_name(get_supertitle(users, UserID));
+                    bot.channel_edit(voiceChannel);
+                }
+
             }
-        } else { // else if a user disconnect from a voice channel.
-            if (channel_map.find(UserID) != channel_map.end()) {
-                dpp::voice voiceChannel = channel_map[UserID];
-                channel_map.erase(UserID);
+        } else { // else if a user disconnect from a voice channel
+
+            // Extra Debug in Case
+            if (user_voice_map.find(UserID) != user_voice_map.end()) {
+                // Get the previous voice channel that user was in
+                dpp::channel prevChannel = user_voice_map[UserID];
+
+                // Clear user from user_voice_map (to Save Memory)
+                user_voice_map.erase(UserID);
+
+                // Check if the previous voice channel that user was is going to be empty
+                if (channel_map[prevChannel.id.str()].size() == 1) { // The previous voice channel is now empty
+                    // Remove the previous voice channel that user was in from channel_map (to Save Memory)
+                    channel_map.erase(ChannelID);
+                    // Set the the voice channel's name that user was in back to orignal 
+                    std::string originalName = settings["channels"]["public-voice-channels"][prevChannel.id.str()]["name"];
+                    prevChannel.set_name(originalName);
+                    bot.channel_edit(prevChannel);
+                } else {
+                    // Get reference to the vector associated with the key
+                    auto& vectorToRemoveFrom = channel_map[prevChannel.id.str()];
+
+                    // Iterating over the vector to find and remove the pair
+                    for (auto it = vectorToRemoveFrom.begin(); it != vectorToRemoveFrom.end(); ++it) {
+                        if (it->first == UserID) {
+                            vectorToRemoveFrom.erase(it);
+                            break;
+                        }
+                    }
+                                    
+                    // Sort the array of destination channel
+                    insertionSort(channel_map[ChannelID]); 
+
+                    // Update the name of destination voice channel
+                    prevChannel.set_name(get_supertitle(users, channel_map[ChannelID][0].first));
+                    bot.channel_edit(prevChannel);
+                }
+            } else {
+                std::cerr << "Impossible. User disconnected from a voice channel that he was never in" << std::endl;
             }
         }
     });

@@ -48,4 +48,6 @@ nlohmann::json Claude3_API(const std::string prompt, const std::string KEY);
 
 int getRandomIndex(int length);
 
+void insertionSort(std::vector<std::pair<std::string, int>>& arr);
+
 #endif

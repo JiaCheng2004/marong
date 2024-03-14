@@ -13,7 +13,8 @@
 #include <sstream>
 #include <ctime>
 #include <time.h>
-#include <queue> 
+#include <queue>
+#include <map>
 #include <iostream>
 #include <curl/curl.h>
 

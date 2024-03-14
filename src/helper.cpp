@@ -322,3 +322,34 @@ int getRandomIndex(int length) {
     std::uniform_int_distribution<> dis(0, length - 1);
     return dis(gen);
 }
+
+void insertionSort(std::vector<std::pair<std::string, int>>& arr){
+    int i, j;
+    std::pair<std::string, int> key;
+    for(i = 1; i<arr.size(); i++){
+        key = arr[i];
+        j = i - 1;
+
+        /* Move elements of arr[0..i-1], that are
+        greater than key, to one position ahead
+        of their current position */
+        while(j >= 0 && arr[j].second > key.second){
+            arr[j+1] = arr[j];
+            j = j - 1;
+        }
+        arr[j + 1] = key;
+    }
+}
+
+int getMostPrioritizedRole(void){
+    return 0;
+}
+
+// dpp::task<dpp::guild_member> coro_get_channel(dpp::cluster &bot, dpp::snowflake &channel_id){
+//         dpp::confirmation_callback_t result = co_await bot.co_channel_get(channel_id);
+//         if (result.http_info.status == 200){
+//             co_return result.get();
+//         } else {
+//             std::cerr << "Invalid http_info: " << result.http_info << std::endl;
+//         }
+// }
