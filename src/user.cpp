@@ -162,20 +162,11 @@ void newUser(nlohmann::json &users, const std::string &userid, std::string usern
 // }
 
 // // Add a genere to user's favorite genere.
-// void add_favorite_genere(nlohmann::json &users, std::string &userid, std::vector<std::string>& genres){
-//     //Check if the genre already exists.
-//     auto& user_favorite_genres = users[userid]["personalConfig"]["music"]["favorite-genres"];
-//     for (auto i = user_favorite_genres.begin(); i != user_favorite_genres.end(); i++)
-//     {
-//         if (*i == genre)
-//         {   //if the genre already exists, print the error message.
-//             std::cerr << "Error: genre name already exists\n";
-//             exit(1);
-//         }
-        
+// void add_favorite_genere(nlohmann::json &users, std::string &userid, std::vector<std::string>& genres){    
+//     if (users[userid]["personalConfig"]["music"]["favorite-genres"].size() >= 100){
+//         users[userid]["personalConfig"]["music"]["favorite-genres"].erase(users[userid]["personalConfig"]["music"]["favorite-genres"].begin());
 //     }
-//     //if the genre is not in the favorite-genres, add the genre intot the favorite-genres.
-//     users[userid]["personalConfig"]["music"]["favorite-genres"].push_back(genre);
+//     users[userid]["personalConfig"]["music"]["favorite-genres"].push_back(genres);
 // }
 
 // // Remove a genere from user's favorite genere
