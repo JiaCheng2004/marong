@@ -103,11 +103,30 @@ int main(int argc, char const *argv[]) {
             std::string prompt = event.msg.content;
             std::vector<dpp::attachment> attachments_vect = event.msg.attachments;
             if (!attachments_vect.empty()) {
-                event.reply("此频道 **暂时** 不支持文字文件", true);
-                co_return;
-            } else {
-                json response = Claude3_API(prompt, configdocument["claude-key"]);
+                for (dpp::attachment& attachment: attachments_vect){
+                    std::string file_type = getStringBeforeSlash(attachment.content_type);
+                    if (file_type == "text"){
+                        dpp::http_request_completion_t result = co_await bot.co_request(attachment.url, dpp::m_get);
+                        if (result.status == 200){
+                            attachTextfile(prompt, attachment.filename, result.body);
+                        }
+                    } else {
+                        event.reply("此频道 **暂时** 不支持 **" + attachment.content_type + "** 类型文件 只支持文字和文字文件", true);
+                    }
+                }
+            }
+            json response = Claude3_API(prompt, configdocument["claude-key"]);
+            try {
                 event.reply(standardMessageFileWrapper(channelId, response["content"][0]["text"]), true);
+            } catch (const nlohmann::json::exception &e) {
+                std::cerr << "Claude3:\n" << to_string(response) << std::endl;
+                prompt = "你的名字叫 marong , 请像对待老板一样, 用简短的话语和可爱的语气来跟我道歉, 非常着急的说'这种问题一般不会发生!!! 如果你看到我说这句话说明要赶紧联系 JC 来修我啦!'，记得要带上可爱的表情哦~";
+                json response = Gemini_API(prompt, configdocument["gemini-key"]);
+                try {
+                    event.reply(standardMessageFileWrapper(channelId, response["candidates"][0]["content"]["parts"][0]["text"]), true);
+                } catch (const nlohmann::json::exception &e) {                        
+                    event.reply(settings["channels"]["chatbots"]["catagory"]["error"][0], true);
+                }
             }
         }
 
@@ -122,21 +141,16 @@ int main(int argc, char const *argv[]) {
                         if (result.status == 200){
                             attachTextfile(prompt, attachment.filename, result.body);
                         }
-                    } else if (file_type == "image"){
-                        event.reply("此频道 **暂时** 不支持图片文件 只支持文字和文字文件 但是 Gemini Pro 频道支持图片文件", true);
-                        co_return;
                     } else {
-                        event.reply("此频道不支持 **" + attachment.content_type + "** 类型文件 只支持文字和文字文件", true);
+                        event.reply("此频道 **暂时** 不支持 **" + attachment.content_type + "** 类型文件 只支持文字和文字文件", true);
                     }
                 }
             }
-            std::cerr << prompt << std::endl;
             json response = Gemini_API(prompt, configdocument["gemini-key"]);
             try {
-                std::cerr << to_string(response) << std::endl;
                 event.reply(standardMessageFileWrapper(channelId, response["candidates"][0]["content"]["parts"][0]["text"]), true);
             } catch (const nlohmann::json::exception &e) {
-                std::cerr << to_string(response) << std::endl;
+                std::cerr << "Gemini:\n" << to_string(response) << std::endl;
                 try {
                     int errorCode = response["error"]["code"].get<int>();
                     switch (errorCode) {
@@ -153,7 +167,7 @@ int main(int argc, char const *argv[]) {
                     }
                     json response = Gemini_API(prompt, configdocument["gemini-key"]);
                     event.reply(standardMessageFileWrapper(channelId, response["candidates"][0]["content"]["parts"][0]["text"]), true);
-                } catch (std::exception &e) {                        
+                } catch (const nlohmann::json::exception &e) {                        
                     event.reply(settings["channels"]["chatbots"]["catagory"]["error"][0], true);
                 }
             }
@@ -163,45 +177,62 @@ int main(int argc, char const *argv[]) {
             std::string prompt = event.msg.content;
             std::vector<dpp::attachment> attachments_vect = event.msg.attachments;
             if (!attachments_vect.empty()) {
-                event.reply("此频道 **暂时** 不支持文字文件", true);
-                co_return;
                 for (dpp::attachment& attachment: attachments_vect){
                     std::string file_type = getStringBeforeSlash(attachment.content_type);
                     if (file_type == "text"){
-
-                    } else if (file_type == "image"){
-                        event.reply("此频道不支持图片文件 只支持文字和文字文件 但是 Gemini Pro 频道支持图片文件", true);
-                        co_return;
+                        dpp::http_request_completion_t result = co_await bot.co_request(attachment.url, dpp::m_get);
+                        if (result.status == 200){
+                            attachTextfile(prompt, attachment.filename, result.body);
+                        }
                     } else {
-                        event.reply("此频道不支持 **" + attachment.content_type + "** 类型文件 只支持文字和文字文件", true);
+                        event.reply("此频道 **暂时** 不支持 **" + attachment.content_type + "** 类型文件 只支持文字和文字文件", true);
                     }
                 }
             }
-
             json response = GPT4_API(prompt, configdocument["openai-key"], "gpt-4");
-            event.reply(standardMessageFileWrapper(channelId, response["choices"][0]["message"]["content"]), true);
+            try{
+                event.reply(standardMessageFileWrapper(channelId, response["choices"][0]["message"]["content"]), true);
+            } catch (const nlohmann::json::exception &e) {
+                std::cerr << "GPT4:\n" << to_string(response) << std::endl;
+                prompt = "你的名字叫 marong , 请像对待老板一样, 用简短的话语和可爱的语气来跟我道歉, 非常着急的说'这种问题一般不会发生!!! 如果你看到我说这句话说明要赶紧联系 JC 来修我啦!'，记得要带上可爱的表情哦~";
+                json response = Gemini_API(prompt, configdocument["gemini-key"]);
+                try {
+                    event.reply(standardMessageFileWrapper(channelId, response["candidates"][0]["content"]["parts"][0]["text"]), true);
+                } catch (const nlohmann::json::exception &e) {                        
+                    event.reply(settings["channels"]["chatbots"]["catagory"]["error"][0], true);
+                }
+            }
         }
 
         else if (channelId == static_cast<int64_t>(settings["channels"]["chatbots"]["gpt"]["gpt4-turbo"]["id"])) {
             std::string prompt = event.msg.content;
             std::vector<dpp::attachment> attachments_vect = event.msg.attachments;
             if (!attachments_vect.empty()) {
-                event.reply("此频道 **暂时** 不支持文字文件", true);
-                co_return;
                 for (dpp::attachment& attachment: attachments_vect){
                     std::string file_type = getStringBeforeSlash(attachment.content_type);
                     if (file_type == "text"){
-                        // RIGHT HERE
-                    } else if (file_type == "image"){
-                        event.reply("此频道不支持图片文件 只支持文字和文字文件 但是 Gemini Pro 频道支持图片文件", true);
-                        co_return;
+                        dpp::http_request_completion_t result = co_await bot.co_request(attachment.url, dpp::m_get);
+                        if (result.status == 200){
+                            attachTextfile(prompt, attachment.filename, result.body);
+                        }
                     } else {
-                        event.reply("此频道不支持此类型文件 只支持文字和文字文件", true);
+                        event.reply("此频道 **暂时** 不支持 **" + attachment.content_type + "** 类型文件 只支持文字和文字文件", true);
                     }
                 }
             }
             json response = GPT4_API(prompt, configdocument["openai-key"], "gpt-4-turbo-preview");
-            event.reply(standardMessageFileWrapper(channelId, response["choices"][0]["message"]["content"]), true);
+            try{
+                event.reply(standardMessageFileWrapper(channelId, response["choices"][0]["message"]["content"]), true);
+            } catch (const nlohmann::json::exception &e) {
+                std::cerr << "GPT4 Turbo:\n" << to_string(response) << std::endl;
+                prompt = "你的名字叫 marong , 请像对待老板一样, 用简短的话语和可爱的语气来跟我道歉, 非常着急的说'这种问题一般不会发生!!! 如果你看到我说这句话说明要赶紧联系 JC 来修我啦!'，记得要带上可爱的表情哦~";
+                json response = Gemini_API(prompt, configdocument["gemini-key"]);
+                try {
+                    event.reply(standardMessageFileWrapper(channelId, response["candidates"][0]["content"]["parts"][0]["text"]), true);
+                } catch (const nlohmann::json::exception &e) {                        
+                    event.reply(settings["channels"]["chatbots"]["catagory"]["error"][0], true);
+                }
+            }
         }
     });
 
