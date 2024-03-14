@@ -80,18 +80,18 @@ int main(int argc, char const *argv[]) {
     });
 
 
-    bot.on_message_create([&bot, &timer, settings, configdocument](const dpp::message_create_t& event) {
+    bot.on_message_create([&bot, &timer, settings, configdocument](const dpp::message_create_t& event) -> dpp::task<void>  {
         if (event.msg.author.is_bot()){
-            return;
+            co_return;
         }
 
-        auto channelId = static_cast<int64_t>(event.msg.channel_id);
+        int64_t channelId = static_cast<int64_t>(event.msg.channel_id);
         if (channelId == static_cast<int64_t>(settings["channels"]["chatbots"]["gpt"]["chatter"]["id"])) {
             std::string prompt = event.msg.content;
             std::vector<dpp::attachment> attachments_vect = event.msg.attachments;
             if (!attachments_vect.empty()) {
-                event.reply("此频道 __**暂时**__ 不支持文字文件", true);
-                return;
+                event.reply("此频道 **暂时** 不支持文字文件", true);
+                co_return;
             } else {
                 std::string response = QingYunKe_API(prompt)["content"];
                 replaceAll(response, "{br}", "\n");
@@ -103,8 +103,8 @@ int main(int argc, char const *argv[]) {
             std::string prompt = event.msg.content;
             std::vector<dpp::attachment> attachments_vect = event.msg.attachments;
             if (!attachments_vect.empty()) {
-                event.reply("此频道 __**暂时**__ 不支持文字文件", true);
-                return;
+                event.reply("此频道 **暂时** 不支持文字文件", true);
+                co_return;
             } else {
                 json response = Claude3_API(prompt, configdocument["claude-key"]);
                 event.reply(standardMessageFileWrapper(channelId, response["content"][0]["text"]), true);
@@ -115,20 +115,46 @@ int main(int argc, char const *argv[]) {
             std::string prompt = event.msg.content;
             std::vector<dpp::attachment> attachments_vect = event.msg.attachments;
             if (!attachments_vect.empty()) {
-                event.reply("此频道 __**暂时**__ 不支持文字文件", true);
-                return;
-            } else {
-                json response = Gemini_API(prompt, configdocument["gemini-key"]);
-                try {
-                    event.reply(standardMessageFileWrapper(channelId, response["candidates"][0]["content"]["parts"][0]["text"]), true);
-                } catch (const nlohmann::json::exception &e) {
-                    std::cerr << to_string(response) << std::endl;
-                    try {
-                        json response = Gemini_API("请像对待老板一样用短短一句话, 萌萌哒礼貌的语气来跟我道歉说 双子星回答不了您的问题哦(记得一定要加上可爱的表情哦)", configdocument["gemini-key"]);
-                        event.reply(standardMessageFileWrapper(channelId, response["candidates"][0]["content"]["parts"][0]["text"]), true);
-                    } catch (const nlohmann::json::exception &e) {                        
-                        event.reply(settings["channels"]["chatbots"]["catagory"]["error"][getRandomIndex(settings["channels"]["chatbots"]["catagory"]["error"].size()-1)], true);
+                for (dpp::attachment& attachment: attachments_vect){
+                    std::string file_type = getStringBeforeSlash(attachment.content_type);
+                    if (file_type == "text"){
+                        dpp::http_request_completion_t result = co_await bot.co_request(attachment.url, dpp::m_get);
+                        if (result.status == 200){
+                            attachTextfile(prompt, attachment.filename, result.body);
+                        }
+                    } else if (file_type == "image"){
+                        event.reply("此频道 **暂时** 不支持图片文件 只支持文字和文字文件 但是 Gemini Pro 频道支持图片文件", true);
+                        co_return;
+                    } else {
+                        event.reply("此频道不支持 **" + attachment.content_type + "** 类型文件 只支持文字和文字文件", true);
                     }
+                }
+            }
+            std::cerr << prompt << std::endl;
+            json response = Gemini_API(prompt, configdocument["gemini-key"]);
+            try {
+                std::cerr << to_string(response) << std::endl;
+                event.reply(standardMessageFileWrapper(channelId, response["candidates"][0]["content"]["parts"][0]["text"]), true);
+            } catch (const nlohmann::json::exception &e) {
+                std::cerr << to_string(response) << std::endl;
+                try {
+                    int errorCode = response["error"]["code"].get<int>();
+                    switch (errorCode) {
+                        case 400:
+                            event.reply(standardMessageFileWrapper(channelId, "404 烂API拒绝访问"), true);
+                        case 500:
+                            prompt = "你的名字叫 marong , 请像对待老板一样, 用简短的话语和可爱的语气来跟我道歉, 遗憾的说'抱歉主人 我的内部API访问出了点问题 请稍后再来问小奴这个问题吧'，记得要带上可爱的表情哦~";
+                            break;
+                        case 503:
+                            prompt = "你的名字叫 marong , 请像对待老板一样, 用简短的话语和可爱的语气来跟我道歉, 耐心的说'问题太多啦 我处理不过来啦 请稍后再来问小奴这个问题吧~'，记得要带上可爱的表情哦~";
+                            break;
+                        default:
+                            prompt = "你的名字叫 marong , 请像对待老板一样, 用简短的话语和可爱的语气来跟我道歉, 可惜的说'这个问题超出我的知识范围啦, 小奴无能为力呢~', 记得要带上可爱的表情哦~";
+                    }
+                    json response = Gemini_API(prompt, configdocument["gemini-key"]);
+                    event.reply(standardMessageFileWrapper(channelId, response["candidates"][0]["content"]["parts"][0]["text"]), true);
+                } catch (std::exception &e) {                        
+                    event.reply(settings["channels"]["chatbots"]["catagory"]["error"][0], true);
                 }
             }
         }
@@ -137,17 +163,17 @@ int main(int argc, char const *argv[]) {
             std::string prompt = event.msg.content;
             std::vector<dpp::attachment> attachments_vect = event.msg.attachments;
             if (!attachments_vect.empty()) {
-                event.reply("此频道 __**暂时**__ 不支持文字文件", true);
-                return;
+                event.reply("此频道 **暂时** 不支持文字文件", true);
+                co_return;
                 for (dpp::attachment& attachment: attachments_vect){
                     std::string file_type = getStringBeforeSlash(attachment.content_type);
                     if (file_type == "text"){
 
                     } else if (file_type == "image"){
                         event.reply("此频道不支持图片文件 只支持文字和文字文件 但是 Gemini Pro 频道支持图片文件", true);
-                        return;
+                        co_return;
                     } else {
-                        event.reply("此频道不支持此类型文件 只支持文字和文字文件", true);
+                        event.reply("此频道不支持 **" + attachment.content_type + "** 类型文件 只支持文字和文字文件", true);
                     }
                 }
             }
@@ -160,27 +186,30 @@ int main(int argc, char const *argv[]) {
             std::string prompt = event.msg.content;
             std::vector<dpp::attachment> attachments_vect = event.msg.attachments;
             if (!attachments_vect.empty()) {
-                event.reply("此频道 __**暂时**__ 不支持文字文件", true);
-                return;
+                event.reply("此频道 **暂时** 不支持文字文件", true);
+                co_return;
                 for (dpp::attachment& attachment: attachments_vect){
                     std::string file_type = getStringBeforeSlash(attachment.content_type);
                     if (file_type == "text"){
-
+                        // RIGHT HERE
                     } else if (file_type == "image"){
                         event.reply("此频道不支持图片文件 只支持文字和文字文件 但是 Gemini Pro 频道支持图片文件", true);
-                        return;
+                        co_return;
                     } else {
                         event.reply("此频道不支持此类型文件 只支持文字和文字文件", true);
                     }
                 }
             }
-
             json response = GPT4_API(prompt, configdocument["openai-key"], "gpt-4-turbo-preview");
             event.reply(standardMessageFileWrapper(channelId, response["choices"][0]["message"]["content"]), true);
         }
     });
 
     bot.on_voice_state_update([&bot, &settings, &users, &user_voice_map, &channel_map](const dpp::voice_state_update_t& event) -> dpp::task<void> {
+
+        if (!users.contains(event.state.user_id.str())){
+            co_return;
+        }
 
         std::string UserID = event.state.user_id.str();
         std::string ChannelID = event.state.channel_id.str();
