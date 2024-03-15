@@ -20,7 +20,7 @@ int main(int argc, char const *argv[]) {
     std::map<std::string, dpp::channel> user_voice_map;
     std::map<std::string, std::vector<std::pair<std::string, int>>> channel_map;
 
-    // Initialize the apiCallMap
+    // Initialize the gptFuntionMap
     std::map<uint64_t, std::pair<GPTFunctionCaller, GPTResponseDealer>> gptFuntionMap = {
         {static_cast<uint64_t>(settings["channels"]["chatbots"]["gpt"]["chatter"]["id"]), {QingYunKe_API, QingYunKe_API_Response}},
         {static_cast<uint64_t>(settings["channels"]["chatbots"]["gpt"]["claude3"]["id"]), {Claude3_API, Claude3_API_Response}},
@@ -29,7 +29,7 @@ int main(int argc, char const *argv[]) {
         {static_cast<uint64_t>(settings["channels"]["chatbots"]["gpt"]["gpt4-turbo"]["id"]), {GPT4_Turbo_API, GPT4_Turbo_API_Response}}
     };
 
-    // Initialize the apiKeyMap
+    // Initialize the gptKeyMap
     std::map<uint64_t, std::string> gptKeyMap = {
         {static_cast<uint64_t>(settings["channels"]["chatbots"]["gpt"]["chatter"]["id"]), "free"},
         {static_cast<uint64_t>(settings["channels"]["chatbots"]["gpt"]["claude3"]["id"]), configdocument["claude-key"]},
@@ -127,8 +127,9 @@ int main(int argc, char const *argv[]) {
                         std::string prompt = FileErrorMessage(settings, Author.get_nickname(), attachment.content_type);
                         std::pair<std::string, int> resPair = Gemini_API_Response(Gemini_API(prompt, configdocument["gemini-key"]));
                         if (resPair.second == 200) {
-                            event.reply(resPair.first, true);
+                            event.reply(standardMessageFileWrapper(event.msg.channel_id, resPair.first), true);
                         } else {
+                            // Implement Later
                             event.reply("Second Gemini's show time", true);
                         }
                         co_return;
