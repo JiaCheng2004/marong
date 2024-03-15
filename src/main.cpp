@@ -143,6 +143,7 @@ int main(int argc, char const *argv[]) {
                         }
                     } else {
                         event.reply("此频道 **暂时** 不支持 **" + attachment.content_type + "** 类型文件 只支持文字和文字文件", true);
+                        co_return;
                     }
                 }
             }
@@ -167,8 +168,14 @@ int main(int argc, char const *argv[]) {
                     }
                     json response = Gemini_API(prompt, configdocument["gemini-key"]);
                     event.reply(standardMessageFileWrapper(channelId, response["candidates"][0]["content"]["parts"][0]["text"]), true);
-                } catch (const nlohmann::json::exception &e) {                        
-                    event.reply(settings["channels"]["chatbots"]["catagory"]["error"][0], true);
+                } catch (const nlohmann::json::exception &e) { 
+                    prompt = "你的名字叫 marong , 对着我抱怨说'问问问,你怎么这么喜欢天天问问题啊'";
+                    json response = Gemini_API(prompt, configdocument["gemini-key"]);
+                    try{
+                        event.reply(standardMessageFileWrapper(channelId, response["candidates"][0]["content"]["parts"][0]["text"]), true);
+                    } catch (const nlohmann::json::exception &e) {
+                        event.reply(settings["channels"]["chatbots"]["category"]["error"][0].get<std::string>(), true);
+                    }
                 }
             }
         }
@@ -241,6 +248,11 @@ int main(int argc, char const *argv[]) {
         if (!users.contains(event.state.user_id.str())){
             co_return;
         }
+
+        std::cerr << "\n\n==========================================\n";
+        printUserVoiceMap(user_voice_map);
+        printChannelMap(channel_map);
+        std::cerr << "==========================================\n";
 
         std::string UserID = event.state.user_id.str();
         std::string ChannelID = event.state.channel_id.str();

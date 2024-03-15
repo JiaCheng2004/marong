@@ -353,3 +353,22 @@ int getMostPrioritizedRole(void){
 //             std::cerr << "Invalid http_info: " << result.http_info << std::endl;
 //         }
 // }
+
+// Function to print the contents of 'user_voice_map'
+void printUserVoiceMap(const std::map<std::string, dpp::channel>& user_voice_map) {
+    for (const auto& pair : user_voice_map) {
+        std::cerr << "User: " << pair.first << ", Channel: " << pair.second.name << std::endl;
+        // Assuming dpp::channel has a suitable << operator overload or method for printing
+    }
+}
+
+// Function to print the contents of 'channel_map'
+void printChannelMap(const std::map<std::string, std::vector<std::pair<std::string, int>>>& channel_map) {
+    for (const auto& pair : channel_map) {
+        std::cerr << "Channel: " << pair.first << std::endl;
+        const auto& vec = pair.second;
+        for (const auto& inner_pair : vec) {
+            std::cerr << "  User: " << inner_pair.first << ", Int: " << inner_pair.second << std::endl;
+        }
+    }
+}

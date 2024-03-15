@@ -50,4 +50,8 @@ int getRandomIndex(int length);
 
 void insertionSort(std::vector<std::pair<std::string, int>>& arr);
 
+void printUserVoiceMap(const std::map<std::string, dpp::channel>& user_voice_map);
+
+void printChannelMap(const std::map<std::string, std::vector<std::pair<std::string, int>>>& channel_map);
+
 #endif
