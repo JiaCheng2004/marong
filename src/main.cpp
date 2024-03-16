@@ -103,48 +103,79 @@ int main(int argc, char const *argv[]) {
             co_return;
         }
 
+        // Convert message's channelID into uint64_t type
         uint64_t channelID = dpp::snowflake(event.msg.channel_id);
-        if (gptKeyMap.find(channelID) != gptKeyMap.end()) {
 
+        // Check if this message's channel exist in the gptKeyMap, meaning if it's a valid channel to deal with
+        if (gptKeyMap.find(channelID) != gptKeyMap.end()) {
+            // If channelID is in gptKeyMap
+
+            // If this message contains any stickers, return.
+            if (!event.msg.stickers.empty()) {
+                co_return;
+            }
+
+            // Get the gptKey from gptKeyMap to make the api call
             std::string key = gptKeyMap.at(channelID);
+
+            // Get the function api maker/dealer specifically for this channel from the gptFunctionMap associated with the channelID
+            // first value in the gptFunctionMap is the function api caller
             GPTFunctionCaller gptFuntionCaller = gptFuntionMap.at(channelID).first;
+            // second value in the gptFunctionMap is the function response dealer
             GPTResponseDealer gptResponseDealer = gptFuntionMap.at(channelID).second;
 
+            // Get the member from this guild that sended this message
             dpp::guild_member Author = event.msg.member;
+            // Get the message content of this message
             std::string MessageContent = event.msg.content;
+            // Get all the attachments of this message
             std::vector<dpp::attachment> attachments_vect = event.msg.attachments;
 
+            // Check if this message contains attachments
             if (!attachments_vect.empty()) {
+                // Iterate through all the attachment in the attachments vector
                 for (dpp::attachment& attachment: attachments_vect){
+                    // Using getStringBeforeSlash() to get the file type of current attachment
                     std::string filetype = getStringBeforeSlash(attachment.content_type);
+                    // if the file type is a text format file. (.txt, .cpp, .c, .py, .java, etc...)
                     if (filetype == "text") {
+                        // Use co_request to request the content of the attachment with attachment's url and in m_get format
                         dpp::http_request_completion_t result = co_await bot.co_request(attachment.url, dpp::m_get);
+                        // Check if request is success
                         if (result.status == 200){
+                            // If success, use attachTextfile to append the content of the file to the prompt
                             attachTextfile(MessageContent, attachment.filename, result.body);
                         }
-                    } else {
-                        // Gemini time;
+                    } else { // Any other type of file
+                        // Use FileErrorMessage to get a file error prompt to tell message author what went wrong
                         std::string prompt = FileErrorMessage(settings, Author.get_nickname(), attachment.content_type);
+                        // Make an Gemini API call to with the file error prompt and get a pair of the response
                         std::pair<std::string, int> resPair = Gemini_API_Response(Gemini_API(prompt, configdocument["gemini-key"]));
+                        // If the respondse is 200, successful.
                         if (resPair.second == 200) {
+                            // Reply the message with the standardMessageFileWrapper
                             event.reply(standardMessageFileWrapper(event.msg.channel_id, resPair.first), true);
-                        } else {
-                            // Implement Later
-                            event.reply("Second Gemini's show time", true);
+                        } else { // Else if something when wrong with the Gemini API Caller:
+                            // Implement Later. (Different error code reponse handling)
+                            event.reply("Error. Wrong file type. Only support text format file(.txt, .cpp, .c, .py, .java, etc...) ", true);
                         }
+                        // return to stop dealing with this message
                         co_return;
                     }
                 }
             }
 
-            /////// standardMessageFileWrapper!!!!!!
-
+            // Make an API call with the result prompt and key
             json response = gptFuntionCaller(MessageContent, key);
+            // Store the response in a response paire
             std::pair<std::string, int> responsePair = gptResponseDealer(response);
             
-            if (!responsePair.first.empty()) {
-                event.reply(responsePair.first, true);
+            // If the respondse is 200, successful.
+            if (responsePair.second == 200) {
+                // Reply the message with the standardMessageFileWrapper
+                event.reply(standardMessageFileWrapper(event.msg.channel_id, responsePair.first), true);
             } else {
+                // Implement Later. (Different error code reponse handling)
                 event.reply("apologize, no answer", true);
             }
         }
