@@ -21,18 +21,16 @@ Discord Bot marong is a Discord bot built based on the D++ library designed for 
 
 ---
 
-### 个人语音频道
-允许在Discord服务器上动态自动更改频道名称，具体是与语音频道相关，为服务器成员创建了独特且个性化的体验。它显著地为Discord服务器上的语音频道提供了定制化的个人触感。有了这个功能，每当成员加入语音频道，频道的名称将自动转变为他们个人预设的频道名称。如果没有预设，将使用默认名称。
+### Personal Voice Channel on Discord
+This feature allows dynamic automatic channel name changes on the Discord server, specifically with voice channels, which creates a unique and personable experience for server members. It significantly provides a tailored, personal touch to members of a Discord server on voice channels. With this feature, every time a member joins a voice channel, the name of the channel is automatIcally transformed into their personal preset channel name. If not preset, the default name is used. 
 
-显示为Discord语音频道的名称是根据优先级确定的。优先级最高的成员名称被设定为语音频道。这增强了导航性，因为用户可以根据最优先的成员的名字轻松识别频道。
+The name that gets displayed as the Discord voice channel is decided based on priority. The highest-prioritized member's name gets set to the voice channel. This enhances navigation, as users can easily identify the channel based on the name of the most prioritized member present. 
 
-一旦成员离开频道，名称转换并非永久性的。频道名称会动态地恢复到用户加入之前的原始状态。这种动态性为Discord提供了流畅直观的用户界面，丰富了用户的定制体验。
+Once a member exits the channel, the name transformation is not permanent. The channel name dynamically reverts back to its original state prior to the user's joining. This dynamicity contributes to a seamless and intuitive user interface on Discord, enriching the customization experience for users. 
 
-通过动态语音频道名称功能，Discord为它们的语音频道增加了独特的个人触感和责任感，使服务器导航和交互更具吸引力和用户友好。
+Through the Dynamic Voice Channel Name feature, Discord adds a unique sense of personal touch and responsibility to their voice channels, making server navigation and interaction more engaging and user friendly.
 
 ---
 
 ## Other Features
-敬请期待
-
----
+Coming soon
