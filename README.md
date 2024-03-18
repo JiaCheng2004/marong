@@ -33,5 +33,6 @@ Discord Bot marong is a Discord bot built based on the D++ library designed for 
 ---
 
 ## Other Features
-Coming soon
+敬请期待
+
 ---
