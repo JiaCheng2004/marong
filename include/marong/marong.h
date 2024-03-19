@@ -9,6 +9,7 @@
 // Place any forward declarations here
 
 #include <marong/helper.h>
+#include <marong/music.h>
 #include <marong/user.h>
 #include <sstream>
 #include <ctime>
@@ -17,6 +18,9 @@
 #include <map>
 #include <iostream>
 #include <curl/curl.h>
+// #include <ogg/ogg.h>
+// #include <oggz/oggz.h>
+// #include <opus/opusfile.h>
 
 using json = nlohmann::json;
 using GPTFunctionCaller = std::function<nlohmann::json(const std::string, const std::string)>;

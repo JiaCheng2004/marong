@@ -94,6 +94,23 @@ int main(int argc, char const *argv[]) {
             } else {
                 event.reply("failed to register...");
             }
+        } else if (event.command.get_command_name() == "play") {
+            std::string song = std::get<std::string>(event.get_parameter("search"));
+	        dpp::guild* g = dpp::find_guild(event.command.guild_id);
+ 
+            if (!g->connect_member_voice(event.command.get_issuing_user().id)) {
+                event.reply("You don't seem to be in a voice channel!");
+                return;
+            }
+
+            dpp::voiceconn* v = event.from->get_voice(event.command.guild_id);
+
+	        if (!v || !v->voiceclient || !v->voiceclient->is_ready()) {
+                event.reply("There was an issue with getting the voice channel. Make sure I'm in a voice channel!");
+                return;
+            }
+
+            handle_streaming(v, song);
         }
     });
 
@@ -342,6 +359,9 @@ int main(int argc, char const *argv[]) {
             bot.global_command_create(dpp::slashcommand("claude3", "仅服务器拥有者或特级权限管理员: 创建一个 Claude 3 Opus 的频道", bot.me.id));
             bot.global_command_create(dpp::slashcommand("chatter", "仅服务器拥有者或特级权限管理员: 创建一个可以和 marong 闲聊的频道", bot.me.id));
             bot.global_command_create(dpp::slashcommand("newuser", "创建用户", bot.me.id));
+            bot.global_command_create(dpp::slashcommand("play", "点歌", bot.me.id)
+                .add_option(dpp::command_option(dpp::co_string, "search", "歌曲链接/歌名/歌手", true))
+            );
         }
     });
 
