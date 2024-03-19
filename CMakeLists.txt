@@ -19,6 +19,10 @@ set_target_properties(${BOT_NAME} PROPERTIES
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 find_package(DPP)
+find_package(OGG)  # Add Ogg library
+find_package(OGGZ)  # Add Oggz library
+find_package(OPUSFILE)  # Add OpusFile library
+
 if(APPLE)
     if(CMAKE_APPLE_SILICON_PROCESSOR)
         set(OPENSSL_ROOT_DIR "/opt/homebrew/opt/openssl")
@@ -37,6 +41,9 @@ target_include_directories(${BOT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${OPENSSL_INCLUDE_DIR}
     ${CURL_INCLUDE_DIRS} # Add CURL include directories
+    ${OGG_INCLUDE_DIRS} # Add Ogg include directories
+    ${OGGZ_INCLUDE_DIRS} # Add Oggz include directories
+    ${OPUSFILE_INCLUDE_DIRS} # Add OpusFile include directories
 )
 
 target_link_libraries(${BOT_NAME}
@@ -45,6 +52,9 @@ target_link_libraries(${BOT_NAME}
     ${OPENSSL_CRYPTO_LIBRARY} 
     ${OPENSSL_SSL_LIBRARY}
     ${CURL_LIBRARIES} # Link CURL library
+    ${OGG_LIBRARIES} # Link Ogg library
+    ${OGGZ_LIBRARIES} # Link Oggz library
+    ${OPUSFILE_LIBRARIES} # Link OpusFile library
 )
 
 if (DPP_FOUND)
