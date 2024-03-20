@@ -1,0 +1,3 @@
+[submodule "lib/yt-dlp"]
+	path = lib/yt-dlp
+	url = https://github.com/yt-dlp/yt-dlp
