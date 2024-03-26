@@ -11,6 +11,7 @@
 #include <marong/helper.h>
 #include <marong/music.h>
 #include <marong/user.h>
+#include <marong/gpt.h>
 #include <sstream>
 #include <ctime>
 #include <time.h>
