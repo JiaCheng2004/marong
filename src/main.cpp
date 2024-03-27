@@ -353,12 +353,14 @@ int main(int argc, char const *argv[]) {
     bot.on_ready([&bot](const dpp::ready_t& event) {
 
         if (dpp::run_once<struct register_bot_commands>()) {
-            bot.global_command_create(dpp::slashcommand("gpt4-turbo", "仅服务器拥有者或特级权限管理员: 创建一个 GPT4 Turbo 的频道", bot.me.id));
-            bot.global_command_create(dpp::slashcommand("gpt4", "仅服务器拥有者或特级权限管理员: 创建一个 GPT4 的频道", bot.me.id));
-            bot.global_command_create(dpp::slashcommand("gemini", "仅服务器拥有者或特级权限管理员: 创建一个 Gemini Pro Ultra 的频道", bot.me.id));
-            bot.global_command_create(dpp::slashcommand("claude3", "仅服务器拥有者或特级权限管理员: 创建一个 Claude 3 Opus 的频道", bot.me.id));
-            bot.global_command_create(dpp::slashcommand("chatter", "仅服务器拥有者或特级权限管理员: 创建一个可以和 marong 闲聊的频道", bot.me.id));
+            bot.global_command_create(dpp::slashcommand("gpt", "仅服务器拥有者或特级权限管理员: 创建一个或者重新创建 GPT 频道", bot.me.id)
+                .add_option(dpp::command_option(dpp::co_string, "model", "要创建或者重新创建的GPT频道(all/gpt4-turbo/gpt4/gemini/claude3/chatter/bing)", true))
+            );
             bot.global_command_create(dpp::slashcommand("newuser", "创建用户", bot.me.id));
+            bot.global_command_create(dpp::slashcommand("exp", "查看自己的经验值", bot.me.id));
+            bot.global_command_create(dpp::slashcommand("music", "创建自己的音乐频道", bot.me.id)
+                .add_option(dpp::command_option(dpp::co_string, "channel-name", "音乐频道", true))
+            );
             bot.global_command_create(dpp::slashcommand("play", "点歌", bot.me.id)
                 .add_option(dpp::command_option(dpp::co_string, "search", "歌曲链接/歌名/歌手", true))
             );
