@@ -12,6 +12,8 @@ void newUser(nlohmann::json &users, const std::string &userid, std::string nickn
         {"status", {
             {"member", true},
             {"blacklisted", false},
+            {"level", 0},
+            {"exp", 0}
         }},
         {"restricted", nlohmann::json::array()},
         {"personalConfig", {

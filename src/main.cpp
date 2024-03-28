@@ -256,8 +256,8 @@ int main(int argc, char const *argv[]) {
                 dpp::channel prevChannel = user_voice_map[UserID];
 
                 // Check if the previous voice channel is going to be empty
-                if (channel_map[voiceChannel.id.str()].size() == 1) { // is going to be empty
-                    channel_map.erase(ChannelID);
+                if (channel_map[prevChannel.id.str()].size() == 1) { // is going to be empty
+                    channel_map.erase(prevChannel.id.str());
 
                     // Set the the voice channel's name that user was in back to orignal 
                     std::string originalName = settings["channels"]["public-voice-channels"][prevChannel.id.str()]["name"];
@@ -265,7 +265,7 @@ int main(int argc, char const *argv[]) {
                     bot.channel_edit(prevChannel);
                 } else {
                     // Iterating over the vector to find and remove the pair
-                    auto& vectorToRemoveFrom = channel_map[voiceChannel.id.str()];
+                    auto& vectorToRemoveFrom = channel_map[prevChannel.id.str()];
                     for (auto it = vectorToRemoveFrom.begin(); it != vectorToRemoveFrom.end(); ++it) {
                         if (it->first == UserID) {
                             vectorToRemoveFrom.erase(it);
@@ -304,7 +304,6 @@ int main(int argc, char const *argv[]) {
                     voiceChannel.set_name(get_supertitle(users, UserID));
                     bot.channel_edit(voiceChannel);
                 }
-
             }
         } else { // else if a user disconnect from a voice channel
 
@@ -319,7 +318,7 @@ int main(int argc, char const *argv[]) {
                 // Check if the previous voice channel that user was is going to be empty
                 if (channel_map[prevChannel.id.str()].size() == 1) { // The previous voice channel is now empty
                     // Remove the previous voice channel that user was in from channel_map (to Save Memory)
-                    channel_map.erase(ChannelID);
+                    channel_map.erase(prevChannel.id.str());
                     // Set the the voice channel's name that user was in back to orignal 
                     std::string originalName = settings["channels"]["public-voice-channels"][prevChannel.id.str()]["name"];
                     prevChannel.set_name(originalName);
@@ -327,7 +326,7 @@ int main(int argc, char const *argv[]) {
                 } else {
                     // Get reference to the vector associated with the key
                     auto& vectorToRemoveFrom = channel_map[prevChannel.id.str()];
-
+                    
                     // Iterating over the vector to find and remove the pair
                     for (auto it = vectorToRemoveFrom.begin(); it != vectorToRemoveFrom.end(); ++it) {
                         if (it->first == UserID) {
@@ -335,7 +334,7 @@ int main(int argc, char const *argv[]) {
                             break;
                         }
                     }
-                                    
+
                     // Sort the array of destination channel
                     insertionSort(channel_map[ChannelID]); 
 
