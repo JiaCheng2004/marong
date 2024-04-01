@@ -66,7 +66,7 @@ else()
 
     FetchContent_GetProperties(libdpp)
     if(NOT libdpp_POPULATED)
-        FetchContent_Populate(libdpp)
+        FetchContet_Populate(libdpp)
         target_include_directories(${BOT_NAME} PUBLIC
             ${libdpp_SOURCE_DIR}/include
         )
