@@ -26,4 +26,14 @@ void printUserVoiceMap(const std::map<std::string, dpp::channel>& user_voice_map
 
 void printChannelMap(const std::map<std::string, std::vector<std::pair<std::string, int>>>& channel_map);
 
+void setlower(std::string& str);
+
+std::string getlower(std::string str);
+
+void setupper(std::string& str);
+
+std::string getupper(std::string str);
+
+void savefile(std::string filename, nlohmann::json& file);
+
 #endif

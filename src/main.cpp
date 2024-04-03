@@ -2,23 +2,25 @@
 
 int main(int argc, char const *argv[]) {
 
-    std::ifstream configfile("../config/config.json");
-    std::ifstream settings_file("../config/settings.json");
-    std::ifstream users_file("../config/users.json");
+    std::ifstream configfile(config_address);
+    std::ifstream settingsfile(settings_address);
+    std::ifstream usersfile(users_address);
 
     json configdocument = json::parse(configfile);
-    json settings = json::parse(settings_file);
-    json users = json::parse(users_file);
+    json settings = json::parse(settingsfile);
+    json users = json::parse(usersfile);
 
     configfile.close();
-    settings_file.close();
-    users_file.close();
+    settingsfile.close();
+    usersfile.close();
 
     dpp::cluster bot(configdocument["token"], dpp::i_all_intents);
     std::map<uint64_t, GPTFunctionCaller> channelFunctionMap;
 
     std::map<std::string, dpp::channel> user_voice_map;
     std::map<std::string, std::vector<std::pair<std::string, int>>> channel_map;
+
+    
 
     // Initialize the gptFuntionMap
     std::map<uint64_t, std::pair<GPTFunctionCaller, GPTResponseDealer>> gptFuntionMap = {
@@ -30,84 +32,100 @@ int main(int argc, char const *argv[]) {
     };
 
     // Initialize the gptKeyMap
-    std::map<uint64_t, std::string> gptKeyMap = {
-        {static_cast<uint64_t>(settings["channels"]["chatbots"]["gpt"]["chatter"]["id"]), "free"},
-        {static_cast<uint64_t>(settings["channels"]["chatbots"]["gpt"]["claude3"]["id"]), configdocument["claude-key"]},
-        {static_cast<uint64_t>(settings["channels"]["chatbots"]["gpt"]["gemini"]["id"]), configdocument["gemini-key"]},
-        {static_cast<uint64_t>(settings["channels"]["chatbots"]["gpt"]["gpt4"]["id"]), configdocument["openai-key"]},
-        {static_cast<uint64_t>(settings["channels"]["chatbots"]["gpt"]["gpt4-turbo"]["id"]), configdocument["openai-key"]}
-    };
+    std::map<uint64_t, std::string> gptKeyMap;
 
     time_t timer;
 
     bot.on_log(dpp::utility::cout_logger());
 
-    bot.on_slashcommand([&bot, &settings, &users](const dpp::slashcommand_t& event) {
-        if (settings["channels"]["chatbots"]["gpt"].contains(event.command.get_command_name())) {
+    bot.on_slashcommand([&bot, &settings, &users, &gptKeyMap, configdocument](const dpp::slashcommand_t& event) -> dpp::task<void> {
+
+        // when a command is "gpt"
+        if (event.command.get_command_name() == "gpt") {
+
+            // get the dpp::guild and dpp::user of the user that issue the command
             dpp::guild Guild = event.command.get_guild();
-            dpp::snowflake UserID = event.command.get_issuing_user().id;
-            if ((Guild.owner_id == UserID) || (has_role(event.command.member, settings["roles"]["PRIVILEGED_ADMIN"]))){
-                if (!has_channel(Guild,  settings["channels"]["chatbots"]["category"]["id"])){
-                    dpp::channel newCat = newCategory( settings["channels"]["chatbots"]["category"]["label"], Guild.id, 0);
-                    settings["channels"]["chatbots"]["category"]["id"] = newCat.id;
-                    bot.channel_create(newCat);
-                }
+            dpp::user User = event.command.get_issuing_user();
 
-                dpp::snowflake CategoryID = settings["channels"]["chatbots"]["category"]["id"];
-                std::string gptName = event.command.get_command_name();
-                auto chatbot = settings["channels"]["chatbots"]["gpt"][gptName];
-
-                if (!has_channel(Guild, chatbot["id"])){
-                    dpp::channel newChannel = newTextChannel(std::string(chatbot["emoji_unicode"]) + "｜﹒" + std::string(chatbot["label"]), Guild.id, CategoryID, 0);
-                    bot.channel_create(newChannel, [&bot, &settings, chatbot, event, gptName](const dpp::confirmation_callback_t& callback){
-                        if (callback.is_error()) { 
-                            bot.log(dpp::loglevel::ll_error, callback.get_error().message);
-                            return;
-                        }
-
-                        auto channel = callback.get<dpp::channel>();
-                        settings["channels"]["chatbots"]["gpt"][gptName]["id"] = static_cast<int64_t>(channel.id);
-
-                        std::ofstream output_file("../config/settings.json");
-                        if (output_file.is_open()) {
-                            output_file << settings.dump(4) << std::endl;
-                            output_file.close();
-                            event.reply("成功创建了支持 " + std::string(chatbot["fullname"]) + " 的聊天频道");
-                        } else {
-                            event.reply("成功创建了支持 " + std::string(chatbot["fullname"]) + " 的聊天频道, 但无法保存频道的ID到文件");
-                        }
-                    });
-                } else {
-                    event.reply("此服务器已存在 " + std::string(chatbot["fullname"]) + " 的频道");
-                }
-            } else {
-                event.reply("仅服务器拥有者或特级权限管理员才能使用此指令");
+            // If user is not a SUPER_ADMIN, PRIVILEGED_ADMIN, or SERVER_OWNER, then they can't user this command
+            if ((Guild.owner_id != User.id) && (!has_role(event.command.member, settings["roles"]["SUPER_ADMIN"])) && (!has_role(event.command.member, settings["roles"]["PRIVILEGED_ADMIN"]))) {
+                event.reply("仅服务器拥有者, 超级权限管理员或特级权限管理员才能使用此指令");
+                co_return;
             }
-        } else if (event.command.get_command_name() == "newuser"){
-            std::ofstream output_file("../config/users.json");
+            
+            // Get the model channel that the user is trying to create
+            std::string model = std::get<std::string>(event.get_parameter("model"));
+            // Set the option into lower case for better to deal with
+            setlower(model);
+            
+            // If the option is not a supported model, then tell the user what models are supported
+            if (!settings["channels"]["chatbots"]["gpt"].contains(model)) {
+                event.reply("目前只支持 gpt4, gpt4-turbo, gemini, claude3, chatter, 和 bing");
+                co_return;
+            }
+
+            // If the category does not exist or can not be found, then create a category to place the gpt channels
+            if (!has_channel(Guild,  settings["channels"]["chatbots"]["category"]["id"])){
+                dpp::channel newCat = newCategory( settings["channels"]["chatbots"]["category"]["label"], Guild.id, 0);
+                settings["channels"]["chatbots"]["category"]["id"] = newCat.id;
+                bot.channel_create(newCat);
+            }
+
+            // initialize all the variables for future usage.
+            // CategoryID - to know where to put the channel if create one
+            dpp::snowflake CategoryID = settings["channels"]["chatbots"]["category"]["id"];
+
+            // chatbot    - to know which one the user is trying to create, this is a json that include the emoji_unicode, label and id
+            json chatbot = settings["channels"]["chatbots"]["gpt"][model];
+
+            // channelID  - the channelID of the chat bot (initaially zero)
+            uint64_t channelID = dpp::snowflake(chatbot["id"]);
+
+            // In the gptKeyMap, if the key does not exist then 
+            if (gptKeyMap.find(channelID) != gptKeyMap.end() || has_channel(Guild, chatbot["id"])) {
+                gptKeyMap[static_cast<uint64_t>(chatbot["id"])] = configdocument[model];
+                std::cerr << static_cast<uint64_t>(chatbot["id"]) << std::endl;
+                event.reply("此服务器已存在 " + std::string(chatbot["fullname"]) + " 的频道");
+                co_return;
+            }
+
+            dpp::channel newChannel = newTextChannel(std::string(chatbot["emoji_unicode"]) + "｜﹒" + std::string(chatbot["label"]), Guild.id, CategoryID, 0);
+
+            dpp::confirmation_callback_t callback = co_await bot.co_channel_create(newChannel);
+
+            if (callback.is_error()) {
+                bot.log(dpp::loglevel::ll_error, callback.get_error().message);
+                co_return;
+            }
+
+            dpp::channel Channel = callback.get<dpp::channel>();
+
+            settings["channels"]["chatbots"]["gpt"][model]["id"] = static_cast<int64_t>(Channel.id);
+            gptKeyMap[static_cast<uint64_t>(Channel.id)] = configdocument[model];
+            savefile(settings_address, settings);
+
+            event.reply("成功创建 " + std::string(chatbot["fullname"]) + " 的频道");
+
+            co_return;
+            
+        } else if (event.command.get_command_name() == "newuser") {
             dpp::guild_member Member = event.command.member;
             newUser(users, Member.user_id.str(), Member.get_nickname());
-            if (output_file.is_open()) {
-                output_file << users.dump(4) << std::endl;
-                output_file.close();
-                event.reply("registered!!");
-            } else {
-                event.reply("failed to register...");
-            }
+            savefile(users_address, users);
         } else if (event.command.get_command_name() == "play") {
             std::string song = std::get<std::string>(event.get_parameter("search"));
 	        dpp::guild* g = dpp::find_guild(event.command.guild_id);
  
             if (!g->connect_member_voice(event.command.get_issuing_user().id)) {
                 event.reply("You don't seem to be in a voice channel!");
-                return;
+                co_return;
             }
 
             dpp::voiceconn* v = event.from->get_voice(event.command.guild_id);
 
 	        if (!v || !v->voiceclient || !v->voiceclient->is_ready()) {
                 event.reply("There was an issue with getting the voice channel. Make sure I'm in a voice channel!");
-                return;
+                co_return;
             }
 
             handle_streaming(v, song);
@@ -124,6 +142,8 @@ int main(int argc, char const *argv[]) {
         uint64_t channelID = dpp::snowflake(event.msg.channel_id);
 
         // Check if this message's channel exist in the gptKeyMap, meaning if it's a valid channel to deal with
+        std::cerr << channelID << std::endl;
+        std::cerr << (gptKeyMap.find(channelID) != gptKeyMap.end()) << std::endl;
         if (gptKeyMap.find(channelID) != gptKeyMap.end()) {
             // If channelID is in gptKeyMap
 
@@ -353,7 +373,7 @@ int main(int argc, char const *argv[]) {
 
         if (dpp::run_once<struct register_bot_commands>()) {
             bot.global_command_create(dpp::slashcommand("gpt", "仅服务器拥有者或特级权限管理员: 创建一个或者重新创建 GPT 频道", bot.me.id)
-                .add_option(dpp::command_option(dpp::co_string, "model", "要创建或者重新创建的GPT频道(all/gpt4-turbo/gpt4/gemini/claude3/chatter/bing)", true))
+                .add_option(dpp::command_option(dpp::co_string, "model", "要创建或者重新创建的GPT频道(gpt4-turbo/gpt4/gemini/claude3/chatter/bing)", true))
             );
             bot.global_command_create(dpp::slashcommand("newuser", "创建用户", bot.me.id));
             bot.global_command_create(dpp::slashcommand("exp", "查看自己的经验值", bot.me.id));

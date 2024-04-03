@@ -36,6 +36,28 @@ dpp::channel newCategory(std::string categoryName, dpp::snowflake guildId, uint1
     return newCat;
 }
 
+void setlower(std::string& str) {
+    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    return;
+}
+
+std::string getlower(std::string str) {
+    std::string str_copy = str;
+    std::transform(str_copy.begin(), str_copy.end(), str_copy.begin(), ::tolower);
+    return str_copy;
+}
+
+void setupper(std::string& str) {
+    std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+    return;
+}
+
+std::string getupper(std::string str) {
+    std::string str_copy = str;
+    std::transform(str_copy.begin(), str_copy.end(), str_copy.begin(), ::toupper);
+    return str_copy;
+}
+
 int getRandomIndex(int length) {
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -77,5 +99,16 @@ void printChannelMap(const std::map<std::string, std::vector<std::pair<std::stri
         for (const auto& inner_pair : vec) {
             std::cerr << "  User: " << inner_pair.first << ", Int: " << inner_pair.second << std::endl;
         }
+    }
+}
+
+void savefile(std::string filename, nlohmann::json& file) {
+    std::ofstream output_file(filename);
+    if (output_file.is_open()) {
+        output_file << file.dump(4) << std::endl;
+        output_file.close();
+        std::cerr << "成功保存";
+    } else {
+        std::cerr << "保存失败";
     }
 }

@@ -27,4 +27,8 @@ using json = nlohmann::json;
 using GPTFunctionCaller = std::function<nlohmann::json(const std::string, const std::string)>;
 using GPTResponseDealer = std::function<std::pair<std::string, int>(nlohmann::json)>;
 
+std::string config_address = "../config/config.json";
+std::string settings_address = "../config/settings.json";
+std::string users_address = "../config/users.json";
+
 #endif /* MARONG_H_ */
