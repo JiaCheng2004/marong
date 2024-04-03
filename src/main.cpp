@@ -1,5 +1,13 @@
 #include <marong/marong.h>
 
+void printMap(const std::map<uint64_t, std::string>& gptKeyMap) {
+    std::cout << "gptKeyMap contents:" << std::endl;
+    for (const auto& pair : gptKeyMap) {
+        std::cout << pair.first << ": " << pair.second << std::endl;
+    }
+}
+
+
 int main(int argc, char const *argv[]) {
 
     std::ifstream configfile(config_address);
@@ -57,7 +65,6 @@ int main(int argc, char const *argv[]) {
             std::string model = std::get<std::string>(event.get_parameter("model"));
             // Set the option into lower case for better to deal with
             setlower(model);
-            
             // If the option is not a supported model, then tell the user what models are supported
             if (!settings["channels"]["chatbots"]["gpt"].contains(model)) {
                 event.reply("目前只支持 gpt4, gpt4-turbo, gemini, claude3, chatter, 和 bing");
@@ -105,7 +112,6 @@ int main(int argc, char const *argv[]) {
             savefile(settings_address, settings);
 
             event.reply("成功创建 " + std::string(chatbot["fullname"]) + " 的频道");
-
             co_return;
             
         } else if (event.command.get_command_name() == "newuser") {
@@ -133,7 +139,7 @@ int main(int argc, char const *argv[]) {
     });
 
 
-    bot.on_message_create([&bot, &timer, settings, configdocument, gptKeyMap, gptFuntionMap](const dpp::message_create_t& event) -> dpp::task<void> {
+    bot.on_message_create([&bot, &timer, settings, configdocument, &gptKeyMap, gptFuntionMap](const dpp::message_create_t& event) -> dpp::task<void> {
         if (event.msg.author.is_bot()){
             co_return;
         }
@@ -142,8 +148,6 @@ int main(int argc, char const *argv[]) {
         uint64_t channelID = dpp::snowflake(event.msg.channel_id);
 
         // Check if this message's channel exist in the gptKeyMap, meaning if it's a valid channel to deal with
-        std::cerr << channelID << std::endl;
-        std::cerr << (gptKeyMap.find(channelID) != gptKeyMap.end()) << std::endl;
         if (gptKeyMap.find(channelID) != gptKeyMap.end()) {
             // If channelID is in gptKeyMap
 
