@@ -303,3 +303,8 @@ void newUser(nlohmann::json &users, const std::string &userid, std::string nickn
 std::string get_supertitle(nlohmann::json users, const std::string userid) {
     return users[userid]["personalConfig"]["voice-channel"]["supertitle"].get<std::string>();
 }
+
+void set_supertitle(nlohmann::json& users, std::string userid, std::string& superTitle) {
+    users[userid]["personalConfig"]["voice-channel"]["supertitle"] = superTitle;
+    savefile(users_address, users);
+}

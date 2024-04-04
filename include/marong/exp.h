@@ -17,5 +17,6 @@ extern std::string users_address;
 void addExp(nlohmann::json& users, dpp::snowflake userID, int64_t amount);
 void loseExp(nlohmann::json& users, dpp::snowflake userID, int64_t amount);
 void editExp(nlohmann::json& users, dpp::snowflake userID, int64_t amount);
+std::pair<int64_t, int64_t> getLvlExp(nlohmann::json users, dpp::snowflake userID);
 
 #endif

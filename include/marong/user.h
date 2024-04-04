@@ -3,7 +3,10 @@
 
 #include <dpp/dpp.h>
 #include <dpp/nlohmann/json.hpp>
+#include <marong/helper.h>
 #include <iostream>
+
+extern std::string users_address;
 
 // Defines and register a new user template
 void newUser(nlohmann::json& users, const std::string& userid, std::string username);
@@ -110,7 +113,7 @@ void newUser(nlohmann::json& users, const std::string& userid, std::string usern
 // Get user's supertitle (Value can't exeed 100 characters)
 std::string get_supertitle(nlohmann::json users, const std::string userid); 
 
-// // Set new value to the user's supertitle value (Value can't exeed 100 characters)
-// void set_supertitle(nlohmann::json& users, std::string& userid, std::string& superTitle);
+// Set new value to the user's supertitle value (Value can't exeed 100 characters)
+void set_supertitle(nlohmann::json& users, std::string userid, std::string& superTitle);
 
 #endif /* USER_H_ */

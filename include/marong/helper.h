@@ -19,6 +19,8 @@ dpp::channel newTextChannel(std::string channelName, dpp::snowflake guildId, dpp
 
 dpp::channel newCategory(std::string categoryName, dpp::snowflake guildId, uint16_t position);
 
+bool isAllDigits(const std::string &str);
+
 int getRandomIndex(int length);
 
 void insertionSort(std::vector<std::pair<std::string, int>>& arr);

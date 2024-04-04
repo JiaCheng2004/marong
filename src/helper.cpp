@@ -109,9 +109,9 @@ void savefile(std::string filename, nlohmann::json& file) {
     if (output_file.is_open()) {
         output_file << file.dump(4) << std::endl;
         output_file.close();
-        std::cerr << "成功保存";
+        std::cerr << "成功保存\n";
     } else {
-        std::cerr << "保存失败";
+        std::cerr << "保存失败\n";
     }
 }
 
@@ -147,4 +147,13 @@ void UpdateSuperTitle(dpp::cluster& bot, dpp::channel& Channel, nlohmann::json& 
     }
     std::cerr << "j\n";
     bot.channel_edit(Channel);
+}
+
+bool isAllDigits(const std::string &str) {
+    for (char c : str) {
+        if (!std::isdigit(c)) {
+            return false;
+        }
+    }
+    return true;
 }

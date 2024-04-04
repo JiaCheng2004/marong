@@ -19,10 +19,12 @@ int main(int argc, char const *argv[]) {
 
     std::map<std::string, dpp::channel> user_voice_map;
 
-    //       ChannelID    [<UserID, Level>]
+    //       ChannelID    [<UserID, priority>]
     std::map<std::string, std::vector<std::pair<std::string, int>>> channel_map;   
 
     std::map<std::string, dpp::timer> timer_map; 
+
+    std::map<std::string, dpp::timer> exp_map; 
 
     // Initialize the gptFuntionMap
     std::map<uint64_t, std::pair<GPTFunctionCaller, GPTResponseDealer>> gptFuntionMap = {
@@ -118,10 +120,28 @@ int main(int argc, char const *argv[]) {
             event.reply("成功创建 " + std::string(chatbot["fullname"]) + " 的频道");
             co_return;
             
-        } else if (event.command.get_command_name() == "newuser") {
-            dpp::guild_member Member = event.command.member;
-            newUser(users, Member.user_id.str(), Member.get_nickname());
+        } else if (event.command.get_command_name() == "initialize") {
+            
+            dpp::guild Server = event.command.get_guild();
+            dpp::members_container allMembers = Server.members;
+
+            for (auto& member_obj : allMembers) {
+                dpp::guild_member Member  = member_obj.second;
+
+                if (!Member.get_user()->is_bot()) {
+                    std::string userName = Member.get_nickname();
+
+                    if (userName.length() == 0)
+                        userName = Member.get_user()->username;
+
+                    newUser(users, Member.user_id.str(), userName);
+
+                    std::cerr << "- Finished registering: " << userName << std::endl;
+                }
+            }
+
             savefile(users_address, users);
+
         } else if (event.command.get_command_name() == "play") {
             std::string song = std::get<std::string>(event.get_parameter("search"));
 	        dpp::guild* g = dpp::find_guild(event.command.guild_id);
@@ -139,9 +159,73 @@ int main(int argc, char const *argv[]) {
             }
 
             handle_streaming(v, song);
+
+        } else if (event.command.get_command_name() == "mine") {
+
+            std::pair<int64_t, int64_t> info = getLvlExp(users, event.command.member.user_id);
+
+            std::string userName = event.command.member.get_nickname();
+
+            if (userName.length() == 0)
+                userName = event.command.member.get_user()->username;
+
+            event.reply("__**" + userName + "**__ 的等级信息:\n__Levels__: \"**" + std::to_string(info.first) + "**\"\n__Exps__: \"**" + std::to_string(info.second) + "**\"");
+
+        } else if (event.command.get_command_name() == "exp") {
+
+            if ((event.command.get_guild().owner_id != event.command.get_issuing_user().id) && (!has_role(event.command.member, settings["roles"]["SUPER_ADMIN"])) && (!has_role(event.command.member, settings["roles"]["PRIVILEGED_ADMIN"]))) {
+                event.reply("仅服务器拥有者, 超级权限管理员或特级权限管理员才能使用此指令");
+                co_return;
+            }
+
+            dpp::snowflake UserID = dpp::snowflake(std::get<std::string>(event.get_parameter("userid")));
+            if (!users.contains(UserID.str())) {
+                event.reply("错误 不能给机器人或者服务器不存在的用户添加/减去经验值");
+                co_return;
+            }
+
+            std::string amount_string = std::get<std::string>(event.get_parameter("amount"));
+
+            if (isAllDigits(amount_string)) {
+                event.reply("错误 EXP值只能放数字");
+            }
+
+            int64_t amount = std::stoll(amount_string);
+            editExp(users, UserID, amount);
+            std::pair<int64_t, int64_t> info = getLvlExp(users, event.command.member.user_id);
+
+            std::string userName = event.command.member.get_nickname();
+
+            if (userName.length() == 0)
+                userName = event.command.member.get_user()->username;
+
+            event.reply("成功! 这是 __**" + userName + "**__ 新的等级信息:\n__Levels__: \"**" + std::to_string(info.first) + "**\"\n__Exps__: \"**" + std::to_string(info.second) + "**\"");
+
+        } else if (event.command.get_command_name() == "set-supertitle") {
+
+            std::string supertitle = std::get<std::string>(event.get_parameter("supertitle"));
+
+            set_supertitle(users, event.command.member.user_id.str(), supertitle);
+            
+        } else if (event.command.get_command_name() == "music") {
+            event.reply("敬请期待");
         }
     });
 
+    bot.on_guild_member_add([&] (const dpp::guild_member_add_t& event){
+        dpp::guild_member newMember = event.added;
+
+        if (!newMember.get_user()->is_bot()) {
+            std::string userName = newMember.get_nickname();
+
+            if (userName.length() == 0)
+                userName = newMember.get_user()->username;
+
+            newUser(users, newMember.user_id.str(), userName);
+
+            std::cerr << "- Finished registering: " << userName << std::endl;
+        }
+    });
 
     bot.on_message_create([&](const dpp::message_create_t& event) -> dpp::task<void> {
         if (event.msg.author.is_bot()){
@@ -238,7 +322,7 @@ int main(int argc, char const *argv[]) {
         std::string UserID = event.state.user_id.str();
         std::string ChannelID = event.state.channel_id.str();
         std::string GuildID = event.state.guild_id.str();
-        int TIME = 11;
+        int TIME = 3;
 
         std::cerr << "\n=============== Information ==============\n";
         std::cerr << "UserID: " << UserID << std::endl;
@@ -261,7 +345,10 @@ int main(int argc, char const *argv[]) {
 
                 channel_map[voiceChannel.id.str()].push_back(user_info);
 
-                if (timer_map.find(ChannelID) != timer_map.end()) { // Empty channel
+                if (timer_map.find(voiceChannel.id.str()) != timer_map.end()) {     // Empty channel
+                    std::string channelName = get_supertitle(users, channel_map[ChannelID][0].first);
+                    voiceChannel.set_name(channelName);
+                    bot.channel_edit(voiceChannel);
                     dpp::timer handle = bot.start_timer([&bot, voiceChannel, ChannelID, users, &timer_map, &channel_map, settings](dpp::timer h) mutable {
                         std::string ChannelName;
                         if (channel_map[ChannelID].empty()) {
@@ -283,7 +370,37 @@ int main(int argc, char const *argv[]) {
                 std::cerr << "Joining\n";
                 user_voice_map[UserID] = voiceChannel;
                 channel_map[voiceChannel.id.str()].push_back(user_info);
-                if (timer_map.find(ChannelID) == timer_map.end()) { // Empty channel
+
+                if (exp_map.find(ChannelID) == exp_map.end()) {
+                    dpp::timer exp_handler = bot.start_timer([&bot, &users, &exp_map, &channel_map, ChannelID, voiceChannel, Member](dpp::timer h) mutable {
+                        if (channel_map[ChannelID].empty()) {
+                            exp_map.erase(ChannelID);
+                            bot.stop_timer(h);
+                        }
+
+                        std::map< dpp::snowflake, dpp::voicestate > voiceMembers = voiceChannel.get_voice_members();
+
+                        for (auto& member : channel_map[ChannelID]) {
+                            int64_t amount = 2;
+                            dpp::snowflake memberUserID = dpp::snowflake(member.first);
+                            dpp::voicestate Voice = voiceMembers[memberUserID];
+                            if (Voice.channel_id.str() == "-1")
+                                ++amount;
+                            if (Voice.self_stream())
+                                amount += 5;
+                            if (Voice.self_video())
+                                amount += 10;
+                            addExp(users, memberUserID, amount);
+                            member.second += amount;
+                        }
+                    }, 60);
+                    exp_map[ChannelID] = exp_handler;
+                }
+
+                if (timer_map.find(ChannelID) != timer_map.end()) {     // Empty channel
+                    std::string channelName = get_supertitle(users, channel_map[ChannelID][0].first);
+                    voiceChannel.set_name(channelName);
+                    bot.channel_edit(voiceChannel);
                     dpp::timer handle = bot.start_timer([&bot, voiceChannel, ChannelID, users, &timer_map, &channel_map, settings](dpp::timer h) mutable {
                         std::string ChannelName;
                         if (channel_map[ChannelID].empty()) {
@@ -307,6 +424,7 @@ int main(int argc, char const *argv[]) {
             dpp::channel prevChannel = user_voice_map[UserID];
             user_voice_map.erase(UserID);
             channelMapRemove(channel_map, prevChannel.id.str(), UserID);
+            
         }
 
         std::cerr << "==========================================\n";
@@ -320,16 +438,23 @@ int main(int argc, char const *argv[]) {
     bot.on_ready([&bot](const dpp::ready_t& event) {
 
         if (dpp::run_once<struct register_bot_commands>()) {
-            bot.global_command_create(dpp::slashcommand("gpt", "仅服务器拥有者或特级权限管理员: 创建一个或者重新创建 GPT 频道", bot.me.id)
+            bot.global_command_create(dpp::slashcommand("gpt", "仅服务器拥有者, 超级权限管理员或特级权限管理员才能使用此指令: 创建一个或者重新创建 GPT 频道", bot.me.id)
                 .add_option(dpp::command_option(dpp::co_string, "model", "要创建或者重新创建的GPT频道(gpt4-turbo/gpt4/gemini/claude3/chatter/bing)", true))
             );
-            bot.global_command_create(dpp::slashcommand("newuser", "创建用户", bot.me.id));
-            bot.global_command_create(dpp::slashcommand("exp", "查看自己的经验值", bot.me.id));
+            bot.global_command_create(dpp::slashcommand("initialize", "仅服务器拥有者: 初始/重制所有用户", bot.me.id));
+            bot.global_command_create(dpp::slashcommand("mine", "查看自己的等级和经验值", bot.me.id));
             bot.global_command_create(dpp::slashcommand("music", "创建自己的音乐频道", bot.me.id)
                 .add_option(dpp::command_option(dpp::co_string, "channel-name", "音乐频道", true))
             );
+            bot.global_command_create(dpp::slashcommand("exp", "仅服务器拥有者, 超级权限管理员或特级权限管理员才能使用此指令: 调整用户经验值", bot.me.id)
+                .add_option(dpp::command_option(dpp::co_string, "userid", "用户ID", true))
+                .add_option(dpp::command_option(dpp::co_string, "amount", "加多少或减多少经验值 一共5000级 每500经验是一级", true))
+            );
             bot.global_command_create(dpp::slashcommand("play", "点歌", bot.me.id)
                 .add_option(dpp::command_option(dpp::co_string, "search", "歌曲链接/歌名/歌手", true))
+            );
+            bot.global_command_create(dpp::slashcommand("set-supertitle", "自定义专属语音频道名称", bot.me.id)
+                .add_option(dpp::command_option(dpp::co_string, "supertitle", "专属语音频道名称", true))
             );
         }
     });
