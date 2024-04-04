@@ -232,109 +232,88 @@ int main(int argc, char const *argv[]) {
     });
 
     bot.on_voice_state_update([&](const dpp::voice_state_update_t& event) -> dpp::task<void> {
-        std::cerr << "0\n";
-
-        if (!users.contains(event.state.user_id.str())){
+        if (!users.contains(event.state.user_id.str()))
             co_return;
-        }
-
-        std::cerr << "\n\n==========================================\n";
-        printUserVoiceMap(user_voice_map);
-        printChannelMap(channel_map);
-        std::cerr << "timer_map: " << timer_map.size() << std::endl;
-        std::cerr << "==========================================\n";
-
-        std::cerr << "0.5\n";
 
         std::string UserID = event.state.user_id.str();
         std::string ChannelID = event.state.channel_id.str();
         std::string GuildID = event.state.guild_id.str();
         int TIME = 5;
 
-        std::cerr << "0.75\n";
+        std::cerr << "\n=============== Information ==============\n";
+        std::cerr << "UserID: " << UserID << std::endl;
+        std::cerr << "Action: ";
 
         dpp::guild_member Member = bot.guild_get_member_sync(event.state.guild_id, event.state.user_id);
-        std::cerr << "0.8\n";
         int priority = static_cast<int>(users[UserID]["status"]["level"]) * 500 + static_cast<int>(users[UserID]["status"]["exp"]);
-        std::cerr << priority << std::endl;
+        
         std::pair<std::string, int> user_info = std::make_pair(UserID, priority);
 
         if (event.state.channel_id != 0) {                              // Connecting to a channel
-
             dpp::confirmation_callback_t channel_response = co_await bot.co_channel_get(event.state.channel_id);
             dpp::channel voiceChannel = channel_response.get<dpp::channel>();
 
-            std::cerr << "1\n";
-
             if (user_voice_map.find(UserID) != user_voice_map.end()) {  // Switching to the a Channel
-
-                std::cerr << "2\n";
+                std::cerr << "Switching\n";
                 dpp::channel prevChannel = user_voice_map[UserID];
                 channelMapRemove(channel_map, prevChannel.id.str(), UserID);
                 user_voice_map[UserID] = voiceChannel;
 
-                std::cerr << "3\n";
-
                 channel_map[voiceChannel.id.str()].push_back(user_info);
 
-                std::cerr << "4\n";
                 if (channel_map.find(ChannelID) != channel_map.end()) { // Empty channel
-                    std::cerr << "5\n";
                     dpp::timer handle = bot.start_timer([&bot, voiceChannel, ChannelID, users, &timer_map, &channel_map, settings](dpp::timer h) mutable {
                         std::string ChannelName;
                         if (channel_map[ChannelID].empty()) {
-                            std::cerr << "a\n";
-                            bot.stop_timer(timer_map[ChannelID]);
-                            std::cerr << "b\n";
-                            timer_map.erase(ChannelID);
-                            std::cerr << "c\n";
                             ChannelName = settings["channels"]["public-voice-channels"][ChannelID]["name"];
-                            std::cerr << "d\n";
                             voiceChannel.set_name(ChannelName);
+                            bot.channel_edit(voiceChannel);
+                            timer_map.erase(ChannelID);
+                            bot.stop_timer(h);
                         } else {
-                            std::cerr << "A\n";
                             ChannelName = get_supertitle(users, channel_map[ChannelID][0].first);
-                            std::cerr << "B\n";
                             voiceChannel.set_name(ChannelName);
+                            bot.channel_edit(voiceChannel);
                         }
-                        std::cerr << "Done\n";
-                        bot.channel_edit(voiceChannel);
+                        std::cerr << "Edited to -> " << ChannelName << std::endl;
                     }, TIME);
-                    std::cerr << "6\n";
                     timer_map[ChannelID] = handle;
-                    std::cerr << "7\n";
                 }
             } else {                                                    // Joining a channel
-                std::cerr << "8\n";
+                std::cerr << "Joining\n";
                 user_voice_map[UserID] = voiceChannel;
                 channel_map[voiceChannel.id.str()].push_back(user_info);
-                std::cerr << "9\n";
                 if (channel_map.find(ChannelID) != channel_map.end()) { // Empty channel
                     dpp::timer handle = bot.start_timer([&bot, voiceChannel, ChannelID, users, &timer_map, &channel_map, settings](dpp::timer h) mutable {
                         std::string ChannelName;
                         if (channel_map[ChannelID].empty()) {
-                            bot.stop_timer(timer_map[ChannelID]);
-                            timer_map.erase(ChannelID);
                             ChannelName = settings["channels"]["public-voice-channels"][ChannelID]["name"];
                             voiceChannel.set_name(ChannelName);
+                            bot.channel_edit(voiceChannel);
+                            timer_map.erase(ChannelID);
+                            bot.stop_timer(h);
                         } else {
                             ChannelName = get_supertitle(users, channel_map[ChannelID][0].first);
                             voiceChannel.set_name(ChannelName);
+                            bot.channel_edit(voiceChannel);
                         }
-                        bot.channel_edit(voiceChannel);
+                        std::cerr << "Edited to -> " << ChannelName << std::endl;
                     }, TIME);
                     timer_map[ChannelID] = handle;
                 }
             }
         } else {                                                        // Disconnecting from a channel
+            std::cerr << "Disconnecting\n";
             dpp::channel prevChannel = user_voice_map[UserID];
             user_voice_map.erase(UserID);
-            std::cerr << "20\n";
-            if (user_voice_map.find(UserID) != user_voice_map.end()) {
-                std::cerr << "21\n";
-                channelMapRemove(channel_map, prevChannel.id.str(), UserID);
-            }
+            channelMapRemove(channel_map, prevChannel.id.str(), UserID);
         }
+
+        std::cerr << "==========================================\n";
+        printUserVoiceMap(user_voice_map);
+        printChannelMap(channel_map);
+        std::cerr << "timer_map: " << timer_map.size() << std::endl;
+        std::cerr << "==========================================\n\n\n";
     });
 
 

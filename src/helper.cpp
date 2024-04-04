@@ -93,13 +93,15 @@ void printUserVoiceMap(const std::map<std::string, dpp::channel>& user_voice_map
 
 // Function to print the contents of 'channel_map'
 void printChannelMap(const std::map<std::string, std::vector<std::pair<std::string, int>>>& channel_map) {
+    std::cerr << "------------------------------------------\n";
     for (const auto& pair : channel_map) {
         std::cerr << "Channel: " << pair.first << std::endl;
         const auto& vec = pair.second;
         for (const auto& inner_pair : vec) {
-            std::cerr << "  User: " << inner_pair.first << ", Int: " << inner_pair.second << std::endl;
+            std::cerr << "* UserID: " << inner_pair.first << ", Priority: " << inner_pair.second << std::endl;
         }
     }
+    std::cerr << "------------------------------------------\n";
 }
 
 void savefile(std::string filename, nlohmann::json& file) {
@@ -114,10 +116,11 @@ void savefile(std::string filename, nlohmann::json& file) {
 }
 
 void channelMapRemove(std::map<std::string, std::vector<std::pair<std::string, int>>>& channel_map, std::string ChannelID, std::string UserID) {
-    std::vector<std::pair<std::string, int>>& vectorToRemoveFrom = channel_map[ChannelID];
-    for (auto it = vectorToRemoveFrom.begin(); it != vectorToRemoveFrom.end(); ++it) {
+    auto& voiceMembers = channel_map[ChannelID];
+    for (auto it = voiceMembers.begin(); it != voiceMembers.end(); ++it) {
+        std::cerr << it->first << " == " << UserID << std::endl;
         if (it->first == UserID) {
-            vectorToRemoveFrom.erase(it);
+            voiceMembers.erase(it);
             break;
         }
     }
