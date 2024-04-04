@@ -238,7 +238,7 @@ int main(int argc, char const *argv[]) {
         std::string UserID = event.state.user_id.str();
         std::string ChannelID = event.state.channel_id.str();
         std::string GuildID = event.state.guild_id.str();
-        int TIME = 5;
+        int TIME = 11;
 
         std::cerr << "\n=============== Information ==============\n";
         std::cerr << "UserID: " << UserID << std::endl;
@@ -261,7 +261,7 @@ int main(int argc, char const *argv[]) {
 
                 channel_map[voiceChannel.id.str()].push_back(user_info);
 
-                if (channel_map.find(ChannelID) != channel_map.end()) { // Empty channel
+                if (timer_map.find(ChannelID) != timer_map.end()) { // Empty channel
                     dpp::timer handle = bot.start_timer([&bot, voiceChannel, ChannelID, users, &timer_map, &channel_map, settings](dpp::timer h) mutable {
                         std::string ChannelName;
                         if (channel_map[ChannelID].empty()) {
@@ -283,7 +283,7 @@ int main(int argc, char const *argv[]) {
                 std::cerr << "Joining\n";
                 user_voice_map[UserID] = voiceChannel;
                 channel_map[voiceChannel.id.str()].push_back(user_info);
-                if (channel_map.find(ChannelID) != channel_map.end()) { // Empty channel
+                if (timer_map.find(ChannelID) == timer_map.end()) { // Empty channel
                     dpp::timer handle = bot.start_timer([&bot, voiceChannel, ChannelID, users, &timer_map, &channel_map, settings](dpp::timer h) mutable {
                         std::string ChannelName;
                         if (channel_map[ChannelID].empty()) {
