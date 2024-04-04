@@ -12,6 +12,7 @@
 #include <marong/music.h>
 #include <marong/user.h>
 #include <marong/gpt.h>
+#include <marong/exp.h>
 #include <sstream>
 #include <ctime>
 #include <time.h>

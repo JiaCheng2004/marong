@@ -5,6 +5,7 @@
 
 #include <dpp/dpp.h>
 #include <dpp/nlohmann/json.hpp>
+#include <marong/user.h>
 #include <sstream>
 #include <iostream>
 #include <curl/curl.h>
@@ -35,5 +36,9 @@ void setupper(std::string& str);
 std::string getupper(std::string str);
 
 void savefile(std::string filename, nlohmann::json& file);
+
+void UpdateSuperTitle(dpp::cluster& bot, dpp::channel& Channel, nlohmann::json& settings, nlohmann::json& users, std::map<std::string, dpp::timer>& timer_map, std::vector<std::pair<std::string, int>>& voiceMember);
+
+void channelMapRemove(std::map<std::string, std::vector<std::pair<std::string, int>>>& channel_map, std::string ChannelID, std::string UserID);
 
 #endif

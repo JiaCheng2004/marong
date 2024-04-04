@@ -112,3 +112,37 @@ void savefile(std::string filename, nlohmann::json& file) {
         std::cerr << "保存失败";
     }
 }
+
+void channelMapRemove(std::map<std::string, std::vector<std::pair<std::string, int>>>& channel_map, std::string ChannelID, std::string UserID) {
+    std::vector<std::pair<std::string, int>>& vectorToRemoveFrom = channel_map[ChannelID];
+    for (auto it = vectorToRemoveFrom.begin(); it != vectorToRemoveFrom.end(); ++it) {
+        if (it->first == UserID) {
+            vectorToRemoveFrom.erase(it);
+            break;
+        }
+    }
+}
+
+void UpdateSuperTitle(dpp::cluster& bot, dpp::channel& Channel, nlohmann::json& settings, nlohmann::json& users, std::map<std::string, dpp::timer>& timer_map, std::vector<std::pair<std::string, int>>& voiceMember) {
+    std::cerr << "a\n";
+    std::string ChannelName;
+    if (voiceMember.empty()) {
+        std::cerr << "b\n";
+        bot.stop_timer(timer_map[Channel.id.str()]);
+        std::cerr << "c\n";
+        timer_map.erase(Channel.id.str());
+        std::cerr << Channel.id.str() << "\n";
+        ChannelName = settings["channels"]["public-voice-channels"][Channel.id.str()]["name"];
+        std::cerr << "e\n";
+        Channel.set_name(ChannelName);
+        std::cerr << "f\n";
+    } else {
+        std::cerr << "g\n";
+        ChannelName = get_supertitle(users, voiceMember[0].first);
+        std::cerr << "h\n";
+        Channel.set_name(ChannelName);
+        std::cerr << "i\n";
+    }
+    std::cerr << "j\n";
+    bot.channel_edit(Channel);
+}

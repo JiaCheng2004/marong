@@ -36,6 +36,11 @@ void newUser(nlohmann::json &users, const std::string &userid, std::string nickn
             {"voice-channel", {
                 {"supertitle", "🏠｜﹒" + nickname + "的小屋"}
             }},
+            {"birthday", {
+                {"year", 0},
+                {"month", 0},
+                {"date", 0}
+            }},
         }}
     };
 
