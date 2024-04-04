@@ -143,7 +143,7 @@ int main(int argc, char const *argv[]) {
     });
 
 
-    bot.on_message_create([&bot, settings, configdocument, &gptKeyMap, gptFuntionMap](const dpp::message_create_t& event) -> dpp::task<void> {
+    bot.on_message_create([&](const dpp::message_create_t& event) -> dpp::task<void> {
         if (event.msg.author.is_bot()){
             co_return;
         }
@@ -231,16 +231,17 @@ int main(int argc, char const *argv[]) {
         }
     });
 
-    bot.on_voice_state_update([&bot, &settings, &users, &user_voice_map, &channel_map, &timer_map](const dpp::voice_state_update_t& event) -> dpp::task<void> {
+    bot.on_voice_state_update([&](const dpp::voice_state_update_t& event) -> dpp::task<void> {
         std::cerr << "0\n";
 
-        if (!users.contains(event.state.user_id.str()) || !settings["channels"]["public-voice-channels"].contains(event.state.channel_id.str())){
+        if (!users.contains(event.state.user_id.str())){
             co_return;
         }
 
         std::cerr << "\n\n==========================================\n";
         printUserVoiceMap(user_voice_map);
         printChannelMap(channel_map);
+        std::cerr << "timer_map: " << timer_map.size() << std::endl;
         std::cerr << "==========================================\n";
 
         std::cerr << "0.5\n";
@@ -279,8 +280,25 @@ int main(int argc, char const *argv[]) {
                 std::cerr << "4\n";
                 if (channel_map.find(ChannelID) != channel_map.end()) { // Empty channel
                     std::cerr << "5\n";
-                    dpp::timer handle = bot.start_timer([&bot, &voiceChannel, &users, &timer_map, &channel_map, &settings](dpp::timer h) {
-                        UpdateSuperTitle(bot, voiceChannel, settings, users, timer_map, channel_map[voiceChannel.id.str()]);
+                    dpp::timer handle = bot.start_timer([&bot, voiceChannel, ChannelID, users, &timer_map, &channel_map, settings](dpp::timer h) mutable {
+                        std::string ChannelName;
+                        if (channel_map[ChannelID].empty()) {
+                            std::cerr << "a\n";
+                            bot.stop_timer(timer_map[ChannelID]);
+                            std::cerr << "b\n";
+                            timer_map.erase(ChannelID);
+                            std::cerr << "c\n";
+                            ChannelName = settings["channels"]["public-voice-channels"][ChannelID]["name"];
+                            std::cerr << "d\n";
+                            voiceChannel.set_name(ChannelName);
+                        } else {
+                            std::cerr << "A\n";
+                            ChannelName = get_supertitle(users, channel_map[ChannelID][0].first);
+                            std::cerr << "B\n";
+                            voiceChannel.set_name(ChannelName);
+                        }
+                        std::cerr << "Done\n";
+                        bot.channel_edit(voiceChannel);
                     }, TIME);
                     std::cerr << "6\n";
                     timer_map[ChannelID] = handle;
@@ -292,17 +310,25 @@ int main(int argc, char const *argv[]) {
                 channel_map[voiceChannel.id.str()].push_back(user_info);
                 std::cerr << "9\n";
                 if (channel_map.find(ChannelID) != channel_map.end()) { // Empty channel
-                    std::cerr << "10\n";
-                    dpp::timer handle = bot.start_timer([&bot, &voiceChannel, &users, &timer_map, &channel_map, &settings](dpp::timer h) {
-                        UpdateSuperTitle(bot, voiceChannel, settings, users, timer_map, channel_map[voiceChannel.id.str()]);
+                    dpp::timer handle = bot.start_timer([&bot, voiceChannel, ChannelID, users, &timer_map, &channel_map, settings](dpp::timer h) mutable {
+                        std::string ChannelName;
+                        if (channel_map[ChannelID].empty()) {
+                            bot.stop_timer(timer_map[ChannelID]);
+                            timer_map.erase(ChannelID);
+                            ChannelName = settings["channels"]["public-voice-channels"][ChannelID]["name"];
+                            voiceChannel.set_name(ChannelName);
+                        } else {
+                            ChannelName = get_supertitle(users, channel_map[ChannelID][0].first);
+                            voiceChannel.set_name(ChannelName);
+                        }
+                        bot.channel_edit(voiceChannel);
                     }, TIME);
-                    std::cerr << "11\n";
                     timer_map[ChannelID] = handle;
-                    std::cerr << "12\n";
                 }
             }
         } else {                                                        // Disconnecting from a channel
             dpp::channel prevChannel = user_voice_map[UserID];
+            user_voice_map.erase(UserID);
             std::cerr << "20\n";
             if (user_voice_map.find(UserID) != user_voice_map.end()) {
                 std::cerr << "21\n";

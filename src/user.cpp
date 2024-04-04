@@ -300,6 +300,6 @@ void newUser(nlohmann::json &users, const std::string &userid, std::string nickn
 // }
 
 // Get user's supertitle (Value can't exeed 100 characters)
-std::string get_supertitle(nlohmann::json &users, const std::string &userid){
+std::string get_supertitle(nlohmann::json users, const std::string userid) {
     return users[userid]["personalConfig"]["voice-channel"]["supertitle"].get<std::string>();
 }

@@ -108,7 +108,7 @@ void newUser(nlohmann::json& users, const std::string& userid, std::string usern
 // void set_backgroundURL(nlohmann::json& users, std::string& userid, std::string& backgroundURL);
 
 // Get user's supertitle (Value can't exeed 100 characters)
-std::string get_supertitle(nlohmann::json& users, const std::string& userid); 
+std::string get_supertitle(nlohmann::json users, const std::string userid); 
 
 // // Set new value to the user's supertitle value (Value can't exeed 100 characters)
 // void set_supertitle(nlohmann::json& users, std::string& userid, std::string& superTitle);

@@ -127,19 +127,18 @@ void UpdateSuperTitle(dpp::cluster& bot, dpp::channel& Channel, nlohmann::json& 
     std::cerr << "a\n";
     std::string ChannelName;
     if (voiceMember.empty()) {
-        std::cerr << "b\n";
-        bot.stop_timer(timer_map[Channel.id.str()]);
-        std::cerr << "c\n";
-        timer_map.erase(Channel.id.str());
         std::cerr << Channel.id.str() << "\n";
         ChannelName = settings["channels"]["public-voice-channels"][Channel.id.str()]["name"];
         std::cerr << "e\n";
         Channel.set_name(ChannelName);
         std::cerr << "f\n";
+        bot.stop_timer(timer_map[Channel.id.str()]);
+        std::cerr << "c\n";
+        timer_map.erase(Channel.id.str());
     } else {
         std::cerr << "g\n";
         ChannelName = get_supertitle(users, voiceMember[0].first);
-        std::cerr << "h\n";
+        std::cerr << Channel.id.str() << "\n";
         Channel.set_name(ChannelName);
         std::cerr << "i\n";
     }
