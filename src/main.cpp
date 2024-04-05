@@ -326,7 +326,7 @@ int main(int argc, char const *argv[]) {
         std::string UserID = event.state.user_id.str();
         std::string ChannelID = event.state.channel_id.str();
         std::string GuildID = event.state.guild_id.str();
-        int TIME = 30;
+        int TIME = 45;
 
         std::cerr << "\n===================== Information ======================\n";
         std::cerr << "UserID: " << UserID << std::endl;

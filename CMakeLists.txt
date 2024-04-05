@@ -12,7 +12,7 @@ string(ASCII 27 Esc)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set_target_properties(${BOT_NAME} PROPERTIES
-    CXX_STANDARD 20
+    CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
 )
 
@@ -49,11 +49,13 @@ target_link_libraries(${BOT_NAME}
     ${CURL_LIBRARIES} # Link CURL library
 )
 
+set(DPP_CORO ON)
+target_compile_definitions(${BOT_NAME} PUBLIC DPP_CORO)
+target_compile_features(${BOT_NAME} PUBLIC cxx_std_20)
+
 if (DPP_FOUND)
     target_link_libraries(${BOT_NAME} ${DPP_LIBRARIES})
     target_include_directories(${BOT_NAME} PUBLIC ${DPP_INCLUDE_DIR})
-    target_compile_definitions(${BOT_NAME} PUBLIC DPP_CORO=ON) # Add coroutines definition
-    target_compile_features(${BOT_NAME} PUBLIC cxx_std_20) # Set C++20 standard
 else()
     message(WARNING "Could not find DPP install. Building from source instead.")
     option(DPP_BUILD_TEST "" OFF)
@@ -70,7 +72,6 @@ else()
         target_include_directories(${BOT_NAME} PUBLIC
             ${libdpp_SOURCE_DIR}/include
         )
-        set(DPP_CORO ON)
         add_subdirectory(
             ${libdpp_SOURCE_DIR}
             ${libdpp_BINARY_DIR}
@@ -78,6 +79,4 @@ else()
     endif()
 
     target_link_libraries(${BOT_NAME} dpp)
-    target_compile_definitions(${BOT_NAME} PUBLIC DPP_CORO=ON) # Add coroutines definition
-    target_compile_features(${BOT_NAME} PUBLIC cxx_std_20) # Set C++20 standard
 endif()
