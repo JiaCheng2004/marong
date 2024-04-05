@@ -102,6 +102,7 @@ void printChannelMap(const std::map<std::string, std::vector<std::pair<std::stri
         std::cerr << "--------------------------------------------------------\n";
         std::cerr << "Channel: " << pair.first << std::endl;
         const auto& vec = pair.second;
+        int i = 1;
         for (const auto& inner_pair : vec) {
             int i = 1;
             std::cerr << i <<".     UserID: " << inner_pair.first << ", Priority: " << inner_pair.second << std::endl;

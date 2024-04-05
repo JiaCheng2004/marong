@@ -451,7 +451,6 @@ int main(int argc, char const *argv[]) {
                     dpp::timer handle = bot.start_timer([&bot, voiceChannel, ChannelID, users, &timer_map, &channel_map, settings](dpp::timer h) mutable {
                         std::string ChannelName;
                         if (channel_map[ChannelID].empty()) {
-                            std::cerr << ChannelID << std::endl;
                             ChannelName = settings["channels"]["public-voice-channels"][ChannelID]["name"];
                         } else {
                             insertionSort(channel_map[ChannelID]);
