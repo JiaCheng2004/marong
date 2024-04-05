@@ -9,8 +9,6 @@ add_executable(${BOT_NAME} ${coresrc})
 
 string(ASCII 27 Esc)
 
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
 set_target_properties(${BOT_NAME} PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
@@ -32,7 +30,6 @@ endif()
 
 # Find CURL
 find_package(CURL REQUIRED)
-
 
 target_include_directories(${BOT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -70,6 +67,7 @@ else()
         target_include_directories(${BOT_NAME} PUBLIC
             ${libdpp_SOURCE_DIR}/include
         )
+        set(DPP_CORO TRUE)
         add_subdirectory(
             ${libdpp_SOURCE_DIR}
             ${libdpp_BINARY_DIR}

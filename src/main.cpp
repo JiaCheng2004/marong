@@ -132,7 +132,7 @@ int main(int argc, char const *argv[]) {
                     std::string userName = Member.get_nickname();
 
                     if (userName.length() == 0)
-                        userName = Member.get_user()->username;
+                        userName = Member.get_user()->global_name;
 
                     newUser(users, Member.user_id.str(), userName);
 
@@ -167,7 +167,7 @@ int main(int argc, char const *argv[]) {
             std::string userName = event.command.member.get_nickname();
 
             if (userName.length() == 0)
-                userName = event.command.member.get_user()->username;
+                userName = event.command.member.get_user()->global_name;
 
             event.reply("__**" + userName + "**__ 的等级信息:\n__Levels__: \"**" + std::to_string(info.first) + "**\"\n__Exps__: \"**" + std::to_string(info.second) + "**\"");
 
@@ -197,7 +197,7 @@ int main(int argc, char const *argv[]) {
             std::string userName = event.command.member.get_nickname();
 
             if (userName.length() == 0)
-                userName = event.command.member.get_user()->username;
+                userName = event.command.member.get_user()->global_name;
 
             event.reply("成功! 这是 __**" + userName + "**__ 新的等级信息:\n__Levels__: \"**" + std::to_string(info.first) + "**\"\n__Exps__: \"**" + std::to_string(info.second) + "**\"");
 
@@ -219,7 +219,7 @@ int main(int argc, char const *argv[]) {
             std::string userName = newMember.get_nickname();
 
             if (userName.length() == 0)
-                userName = newMember.get_user()->username;
+                userName = newMember.get_user()->global_name;
 
             newUser(users, newMember.user_id.str(), userName);
 
