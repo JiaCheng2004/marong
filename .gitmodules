@@ -7,3 +7,6 @@
 [submodule "lib/ffmpeg"]
 	path = lib/ffmpeg
 	url = https://git.ffmpeg.org/ffmpeg.git
+[submodule "lib/dpp"]
+	path = lib/dpp
+	url = git@github.com:brainboxdotcc/DPP.git
