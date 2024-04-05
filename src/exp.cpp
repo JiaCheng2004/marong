@@ -1,60 +1,48 @@
 #include <marong/exp.h>
 
 void addExp(nlohmann::json& users, dpp::snowflake userID, int64_t amount) {
-    int64_t currentExp = users[userID]["exp"];
-    int64_t currentLevel = users[userID]["level"];
-
-    currentExp += amount;
-
-    if (currentExp >= MAX_EXP) {
-        currentLevel += 1;
-        if (currentLevel > MAX_LEVEL) {
-            currentLevel = MAX_LEVEL;
+    int64_t currentLevel = users[userID.str()]["status"]["level"];
+    int64_t currentExp = users[userID.str()]["status"]["exp"];
+    if(currentLevel < MAX_LEVEL) {
+        currentExp += amount;
+        while(currentExp >= MAX_EXP) {
+            currentExp -= MAX_EXP;
+            currentLevel++;
+            if(currentLevel == MAX_LEVEL) {
+                currentExp = 0;
+                break;
+            }
         }
-        currentExp = 0;
+        users[userID.str()]["status"]["exp"] = currentExp;
+        users[userID.str()]["status"]["level"] = currentLevel;
     }
-
-    users[userID]["exp"] = currentExp;
-    users[userID]["level"] = currentLevel;
-
     savefile(users_address, users);
 }
 
 void loseExp(nlohmann::json& users, dpp::snowflake userID, int64_t amount) {
-    int64_t currentExp = users[userID]["exp"];
-    int64_t currentLevel = users[userID]["level"];
-
-    currentExp -= amount;
-
-    if (currentExp < MIN_EXP) {
-        currentLevel -= 1;
-        if (currentLevel < MIN_LEVEL) {
-            currentLevel = MIN_LEVEL;
+    int64_t currentLevel = users[userID.str()]["status"]["level"];
+    int64_t currentExp = users[userID.str()]["status"]["exp"];
+    if(currentLevel > MIN_LEVEL || currentExp > MIN_EXP) {
+        currentExp -= amount;
+        while(currentExp < 0) {
+            currentLevel--;
+            currentExp += MAX_EXP;
+            if(currentLevel == MIN_LEVEL) {
+                currentExp = currentExp < MIN_EXP ? 0 : currentExp;
+                break;
+            }
         }
-        currentExp = MAX_EXP;
+        users[userID.str()]["status"]["exp"] = currentExp;
+        users[userID.str()]["status"]["level"] = currentLevel;
     }
-
-    users[userID]["exp"] = currentExp;
-    users[userID]["level"] = currentLevel;
-
     savefile(users_address, users);
 }
 
 void editExp(nlohmann::json& users, dpp::snowflake userID, int64_t amount) {
-    int64_t currentLevel = amount / MAX_EXP;
-    if (currentLevel > MAX_LEVEL) {
-        currentLevel = MAX_LEVEL;
-    }
-    else if (currentLevel < MIN_LEVEL) {
-        currentLevel = MIN_LEVEL;
-    }
-
-    int64_t currentExp = amount % MAX_EXP;
-
-    users[userID]["exp"] = currentExp;
-    users[userID]["level"] = currentLevel;
-
-    savefile(users_address, users);
+    if(amount < 0)
+        loseExp(users, userID, -amount);
+    else
+        addExp(users, userID, amount);
 }
 
 std::pair<int64_t, int64_t> getLvlExp(nlohmann::json users, dpp::snowflake userID) {

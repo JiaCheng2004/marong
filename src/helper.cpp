@@ -66,6 +66,10 @@ int getRandomIndex(int length) {
 }
 
 void insertionSort(std::vector<std::pair<std::string, int>>& arr){
+    if (arr.empty()) {
+        return;
+    }
+
     int i, j;
     std::pair<std::string, int> key;
     for(i = 1; i<arr.size(); i++){
@@ -75,6 +79,7 @@ void insertionSort(std::vector<std::pair<std::string, int>>& arr){
         /* Move elements of arr[0..i-1], that are
         greater than key, to one position ahead
         of their current position */
+
         while(j >= 0 && arr[j].second > key.second){
             arr[j+1] = arr[j];
             j = j - 1;
@@ -149,11 +154,9 @@ void UpdateSuperTitle(dpp::cluster& bot, dpp::channel& Channel, nlohmann::json& 
     bot.channel_edit(Channel);
 }
 
-bool isAllDigits(const std::string &str) {
-    for (char c : str) {
-        if (!std::isdigit(c)) {
-            return false;
-        }
-    }
-    return true;
+bool isAllDigits(const std::string& str) {
+    std::string::const_iterator it = str.begin();
+    if (it != str.end() && *it == '-') ++it;
+    while (it != str.end() && std::isdigit(*it)) ++it;
+    return !str.empty() && it == str.end();
 }
