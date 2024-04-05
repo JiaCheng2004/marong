@@ -42,7 +42,7 @@ int main(int argc, char const *argv[]) {
 
     bot.on_log(dpp::utility::cout_logger());
 
-    bot.on_slashcommand([&bot, &settings, &users, &gptKeyMap, configdocument](const dpp::slashcommand_t& event) -> dpp::task<void> {
+    bot.on_slashcommand([&](const dpp::slashcommand_t& event) -> dpp::task<void> {
 
         // when a command is "gpt"
         if (event.command.get_command_name() == "gpt") {
@@ -192,14 +192,18 @@ int main(int argc, char const *argv[]) {
 
             int64_t amount = std::stoll(amount_string);
             editExp(users, UserID, amount);
-            std::pair<int64_t, int64_t> info = getLvlExp(users, event.command.member.user_id);
-
+            std::pair<int64_t, int64_t> info = getLvlExp(users, UserID);
             std::string userName = event.command.member.get_nickname();
 
-            if (userName.length() == 0)
-                userName = event.command.member.get_user()->global_name;
+            if (user_voice_map.find(UserID.str()) != user_voice_map.end()) {
+                for (auto& member : channel_map[user_voice_map[UserID.str()].id.str() ]) {
+                    std::cerr << member.first << " == " << UserID.str() << std::endl;
+                    if (member.first == UserID.str())
+                        member.second += amount;
+                }
+            }
 
-            event.reply("成功! 这是 __**" + userName + "**__ 新的等级信息:\n__Levels__: \"**" + std::to_string(info.first) + "**\"\n__Exps__: \"**" + std::to_string(info.second) + "**\"");
+            event.reply("成功! 这是用户更新后的等级信息:\n__Levels__: \"**" + std::to_string(info.first) + "**\"\n__Exps__: \"**" + std::to_string(info.second) + "**\"");
 
         } else if (event.command.get_command_name() == "set-supertitle") {
 
@@ -376,7 +380,6 @@ int main(int argc, char const *argv[]) {
                             if ((info_after.first > info_before.first) && (info_after.second % 10 == 0))  {
                                 //implemented later
                             }
-
                             member.second += amount;
                         }
                     }, 60);
@@ -433,7 +436,6 @@ int main(int argc, char const *argv[]) {
                             if ((info_after.first > info_before.first) && (info_after.second % 10 == 0))  {
                                 //implemented later
                             }
-
                             member.second += amount;
                         }
                     }, 60);
@@ -447,6 +449,7 @@ int main(int argc, char const *argv[]) {
                     dpp::timer handle = bot.start_timer([&bot, voiceChannel, ChannelID, users, &timer_map, &channel_map, settings](dpp::timer h) mutable {
                         std::string ChannelName;
                         if (channel_map[ChannelID].empty()) {
+                            std::cerr << ChannelID << std::endl;
                             ChannelName = settings["channels"]["public-voice-channels"][ChannelID]["name"];
                         } else {
                             insertionSort(channel_map[ChannelID]);

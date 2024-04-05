@@ -31,6 +31,7 @@ endif()
 # Find CURL
 find_package(CURL REQUIRED)
 
+
 target_include_directories(${BOT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${OPENSSL_INCLUDE_DIR}
