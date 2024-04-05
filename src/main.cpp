@@ -52,11 +52,11 @@ int main(int argc, char const *argv[]) {
             dpp::user User = event.command.get_issuing_user();
 
             // If user is not a SUPER_ADMIN, PRIVILEGED_ADMIN, or SERVER_OWNER, then they can't user this command
-            if ((Guild.owner_id != User.id) && (!has_role(event.command.member, settings["roles"]["SUPER_ADMIN"])) && (!has_role(event.command.member, settings["roles"]["PRIVILEGED_ADMIN"]))) {
+            if ((event.command.get_guild().owner_id != event.command.get_issuing_user().id) && (!has_role(event.command.member, dpp::snowflake(settings["roles"]["SUPER_ADMIN"]["id"]))) && (!has_role(event.command.member, dpp::snowflake(settings["roles"]["PRIVILEGED_ADMIN"]["id"])))) {
                 event.reply("仅服务器拥有者, 超级权限管理员或特级权限管理员才能使用此指令");
                 co_return;
             }
-            
+
             // Get the model channel that the user is trying to create
             std::string model = std::get<std::string>(event.get_parameter("model"));
             // Set the option into lower case for better to deal with
@@ -87,7 +87,6 @@ int main(int argc, char const *argv[]) {
             // In the gptKeyMap, if the key already exist or the channel already exist
             if (gptKeyMap.find(channelID) != gptKeyMap.end() || has_channel(Guild, chatbot["id"])) {
                 gptKeyMap[static_cast<uint64_t>(chatbot["id"])] = configdocument[model];
-                std::cerr << static_cast<uint64_t>(chatbot["id"]) << std::endl;
                 event.reply("此服务器已存在 " + std::string(chatbot["fullname"]) + " 的频道");
                 co_return;
             }
@@ -173,7 +172,7 @@ int main(int argc, char const *argv[]) {
 
         } else if (event.command.get_command_name() == "exp") {
 
-            if ((event.command.get_guild().owner_id != event.command.get_issuing_user().id) && (!has_role(event.command.member, settings["roles"]["SUPER_ADMIN"])) && (!has_role(event.command.member, settings["roles"]["PRIVILEGED_ADMIN"]))) {
+            if ((event.command.get_guild().owner_id != event.command.get_issuing_user().id) && (!has_role(event.command.member, dpp::snowflake(settings["roles"]["SUPER_ADMIN"]["id"]))) && (!has_role(event.command.member, dpp::snowflake(settings["roles"]["PRIVILEGED_ADMIN"]["id"])))) {
                 event.reply("仅服务器拥有者, 超级权限管理员或特级权限管理员才能使用此指令");
                 co_return;
             }
@@ -197,7 +196,6 @@ int main(int argc, char const *argv[]) {
 
             if (user_voice_map.find(UserID.str()) != user_voice_map.end()) {
                 for (auto& member : channel_map[user_voice_map[UserID.str()].id.str() ]) {
-                    std::cerr << member.first << " == " << UserID.str() << std::endl;
                     if (member.first == UserID.str())
                         member.second += amount;
                 }
@@ -401,8 +399,6 @@ int main(int argc, char const *argv[]) {
                         voiceChannel.set_name(ChannelName);
                         bot.channel_edit(voiceChannel);
                         std::cerr << "Trying to edited to -> " << ChannelName << std::endl;
-                        if (voiceChannel.name == ChannelName)
-                            std::cerr << "Successfully edited to -> " << ChannelName << std::endl;
                     }, TIME);
                     timer_map[ChannelID] = handle;
                 }
@@ -459,8 +455,6 @@ int main(int argc, char const *argv[]) {
                         voiceChannel.set_name(ChannelName);
                         bot.channel_edit(voiceChannel);
                         std::cerr << "Trying to edited to -> " << ChannelName << std::endl;
-                        if (voiceChannel.name == ChannelName)
-                            std::cerr << "Successfully edited to -> " << ChannelName << std::endl;
                     }, TIME);
                     timer_map[ChannelID] = handle;
                 }
