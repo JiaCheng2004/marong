@@ -99,13 +99,15 @@ void printUserVoiceMap(const std::map<std::string, dpp::channel>& user_voice_map
 // Function to print the contents of 'channel_map'
 void printChannelMap(const std::map<std::string, std::vector<std::pair<std::string, int>>>& channel_map) {
     for (const auto& pair : channel_map) {
-        std::cerr << "------------------------------------------\n";
+        std::cerr << "--------------------------------------------------------\n";
         std::cerr << "Channel: " << pair.first << std::endl;
         const auto& vec = pair.second;
         for (const auto& inner_pair : vec) {
-            std::cerr << "- UserID: " << inner_pair.first << ", Priority: " << inner_pair.second << std::endl;
+            int i = 1;
+            std::cerr << i <<".     UserID: " << inner_pair.first << ", Priority: " << inner_pair.second << std::endl;
+            ++i;
         }
-        std::cerr << "------------------------------------------\n";
+        std::cerr << "--------------------------------------------------------\n";
     }
 }
 

@@ -32,6 +32,7 @@
 
 #include "libavutil/attributes.h"
 #include "libavutil/internal.h"
+#include "libavutil/mem.h"
 #include "libavutil/mem_internal.h"
 
 #include "audiodsp.h"
@@ -110,9 +111,9 @@ static void apply_mdct(AC3EncodeContext *s)
  */
 static void apply_channel_coupling(AC3EncodeContext *s)
 {
-    LOCAL_ALIGNED_16(CoefType, cpl_coords,      [AC3_MAX_BLOCKS], [AC3_MAX_CHANNELS][16]);
+    LOCAL_ALIGNED_32(CoefType, cpl_coords,      [AC3_MAX_BLOCKS], [AC3_MAX_CHANNELS][16]);
 #if AC3ENC_FLOAT
-    LOCAL_ALIGNED_16(int32_t, fixed_cpl_coords, [AC3_MAX_BLOCKS], [AC3_MAX_CHANNELS][16]);
+    LOCAL_ALIGNED_32(int32_t, fixed_cpl_coords, [AC3_MAX_BLOCKS], [AC3_MAX_CHANNELS][16]);
 #else
     int32_t (*fixed_cpl_coords)[AC3_MAX_CHANNELS][16] = cpl_coords;
 #endif
@@ -222,6 +223,8 @@ static void apply_channel_coupling(AC3EncodeContext *s)
             }
         }
     }
+
+    av_assert1(s->fbw_channels > 0);
 
     /* calculate final coupling coordinates, taking into account reusing of
        coordinates in successive blocks */

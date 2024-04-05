@@ -1,3 +1,9 @@
 [submodule "lib/yt-dlp"]
 	path = lib/yt-dlp
 	url = https://github.com/yt-dlp/yt-dlp
+[submodule "lib/lib/ffmpeg"]
+	path = lib/lib/ffmpeg
+	url = https://git.ffmpeg.org/ffmpeg.git
+[submodule "lib/ffmpeg"]
+	path = lib/ffmpeg
+	url = https://git.ffmpeg.org/ffmpeg.git

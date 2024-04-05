@@ -328,7 +328,7 @@ int main(int argc, char const *argv[]) {
         std::string GuildID = event.state.guild_id.str();
         int TIME = 30;
 
-        std::cerr << "\n=============== Information ==============\n";
+        std::cerr << "\n===================== Information ======================\n";
         std::cerr << "UserID: " << UserID << std::endl;
         std::cerr << "Action: ";
 
@@ -400,7 +400,9 @@ int main(int argc, char const *argv[]) {
                         }
                         voiceChannel.set_name(ChannelName);
                         bot.channel_edit(voiceChannel);
-                        std::cerr << "Edited to -> " << ChannelName << std::endl;
+                        std::cerr << "Trying to edited to -> " << ChannelName << std::endl;
+                        if (voiceChannel.name == ChannelName)
+                            std::cerr << "Successfully edited to -> " << ChannelName << std::endl;
                     }, TIME);
                     timer_map[ChannelID] = handle;
                 }
@@ -457,7 +459,9 @@ int main(int argc, char const *argv[]) {
                         }
                         voiceChannel.set_name(ChannelName);
                         bot.channel_edit(voiceChannel);
-                        std::cerr << "Edited to -> " << ChannelName << std::endl;
+                        std::cerr << "Trying to edited to -> " << ChannelName << std::endl;
+                        if (voiceChannel.name == ChannelName)
+                            std::cerr << "Successfully edited to -> " << ChannelName << std::endl;
                     }, TIME);
                     timer_map[ChannelID] = handle;
                 }
@@ -470,11 +474,11 @@ int main(int argc, char const *argv[]) {
             
         }
 
-        std::cerr << "==========================================\n";
+        std::cerr << "========================================================\n";
         printUserVoiceMap(user_voice_map);
         printChannelMap(channel_map);
         std::cerr << "timer_map: " << timer_map.size() << std::endl;
-        std::cerr << "==========================================\n\n\n";
+        std::cerr << "========================================================\n\n\n";
     });
 
 

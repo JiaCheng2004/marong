@@ -29,6 +29,7 @@
 
 #include "libavutil/channel_layout.h"
 #include "libavutil/float_dsp.h"
+#include "libavutil/mem.h"
 #include "libavutil/mem_internal.h"
 #include "libavutil/thread.h"
 #include "libavutil/tx.h"
@@ -60,7 +61,7 @@
 /**
  * Frame type VLC coding.
  */
-static VLC frame_type_vlc;
+static VLCElem frame_type_vlc[132];
 
 /**
  * Adaptive codebook types.
@@ -320,9 +321,9 @@ static av_cold void wmavoice_init_static_data(void)
         14, 14, 14, 14
     };
 
-    VLC_INIT_STATIC_FROM_LENGTHS(&frame_type_vlc, VLC_NBITS,
-                                 FF_ARRAY_ELEMS(bits), bits,
-                                 1, NULL, 0, 0, 0, 0, 132);
+    VLC_INIT_STATIC_TABLE_FROM_LENGTHS(frame_type_vlc, VLC_NBITS,
+                                       FF_ARRAY_ELEMS(bits), bits,
+                                       1, NULL, 0, 0, 0, 0);
 }
 
 static av_cold void wmavoice_flush(AVCodecContext *ctx)
@@ -1503,7 +1504,7 @@ static int synth_frame(AVCodecContext *ctx, GetBitContext *gb, int frame_idx,
     int pitch[MAX_BLOCKS], av_uninit(last_block_pitch);
 
     /* Parse frame type ("frame header"), see frame_descs */
-    int bd_idx = s->vbm_tree[get_vlc2(gb, frame_type_vlc.table, 6, 3)], block_nsamples;
+    int bd_idx = s->vbm_tree[get_vlc2(gb, frame_type_vlc, 6, 3)], block_nsamples;
 
     if (bd_idx < 0) {
         av_log(ctx, AV_LOG_ERROR,

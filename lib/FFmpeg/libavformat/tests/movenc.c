@@ -23,6 +23,7 @@
 #include "libavutil/intreadwrite.h"
 #include "libavutil/mathematics.h"
 #include "libavutil/md5.h"
+#include "libavutil/mem.h"
 
 #include "libavformat/avformat.h"
 
@@ -96,7 +97,7 @@ static void reset_count_warnings(void)
     av_log_set_callback(av_log_default_callback);
 }
 
-static int io_write(void *opaque, uint8_t *buf, int size)
+static int io_write(void *opaque, const uint8_t *buf, int size)
 {
     out_size += size;
     av_md5_update(md5, buf, size);
@@ -105,7 +106,7 @@ static int io_write(void *opaque, uint8_t *buf, int size)
     return size;
 }
 
-static int io_write_data_type(void *opaque, uint8_t *buf, int size,
+static int io_write_data_type(void *opaque, const uint8_t *buf, int size,
                               enum AVIODataMarkerType type, int64_t time)
 {
     char timebuf[30], content[5] = { 0 };

@@ -23,13 +23,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <inttypes.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include "libavutil/bswap.h"
+#include "libavutil/mem.h"
 #include "config.h"
-#include "rgb2rgb.h"
 #include "swscale.h"
 #include "swscale_internal.h"
 #include "libavutil/pixdesc.h"
@@ -46,7 +45,7 @@
  * where Y = cr * R + cg * G + cb * B and cr + cg + cb = 1.
  */
 const int32_t ff_yuv2rgb_coeffs[11][4] = {
-    { 117489, 138438, 13975, 34925 }, /* no sequence_display_extension */
+    { 104597, 132201, 25675, 53279 }, /* no sequence_display_extension */
     { 117489, 138438, 13975, 34925 }, /* ITU-R Rec. 709 (1990) */
     { 104597, 132201, 25675, 53279 }, /* unspecified */
     { 104597, 132201, 25675, 53279 }, /* reserved */

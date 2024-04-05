@@ -27,6 +27,7 @@
  */
 
 #define AC3ENC_FLOAT 0
+#include "libavutil/mem.h"
 #include "audiodsp.h"
 #include "ac3enc.h"
 #include "codec_internal.h"
@@ -82,7 +83,7 @@ static av_cold int ac3_fixed_mdct_init(AC3EncodeContext *s)
     if (!iwin)
         return AVERROR(ENOMEM);
 
-    avpriv_kbd_window_init(fwin, 5.0, AC3_BLOCK_SIZE);
+    ff_kbd_window_init(fwin, 5.0, AC3_BLOCK_SIZE);
     for (int i = 0; i < AC3_BLOCK_SIZE; i++)
         iwin[i] = lrintf(fwin[i] * (1 << 22));
 
@@ -122,7 +123,6 @@ const FFCodec ff_ac3_fixed_encoder = {
     .p.priv_class    = &ff_ac3enc_class,
     .caps_internal   = FF_CODEC_CAP_INIT_CLEANUP,
     .p.supported_samplerates = ff_ac3_sample_rate_tab,
-    CODEC_OLD_CHANNEL_LAYOUTS_ARRAY(ff_ac3_channel_layouts)
     .p.ch_layouts    = ff_ac3_ch_layouts,
     .defaults        = ff_ac3_enc_defaults,
 };

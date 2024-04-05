@@ -26,9 +26,10 @@
 
 #include "libavutil/attributes.h"
 #include "libavutil/ffmath.h"
+#include "libavutil/mem.h"
 
 #include "avcodec.h"
-#include "aactab.h"
+#include "aac.h"
 #include "psymodel.h"
 
 /***********************************
