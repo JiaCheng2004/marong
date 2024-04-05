@@ -324,7 +324,7 @@ int main(int argc, char const *argv[]) {
         std::string UserID = event.state.user_id.str();
         std::string ChannelID = event.state.channel_id.str();
         std::string GuildID = event.state.guild_id.str();
-        int TIME = 45;
+        int TIME = 30;
 
         std::cerr << "\n===================== Information ======================\n";
         std::cerr << "UserID: " << UserID << std::endl;
@@ -478,24 +478,25 @@ int main(int argc, char const *argv[]) {
     bot.on_ready([&bot](const dpp::ready_t& event) {
 
         if (dpp::run_once<struct register_bot_commands>()) {
-            bot.global_command_create(dpp::slashcommand("gpt", "仅服务器拥有者, 超级权限管理员或特级权限管理员才能使用此指令: 创建一个或者重新创建 GPT 频道", bot.me.id)
-                .add_option(dpp::command_option(dpp::co_string, "model", "要创建或者重新创建的GPT频道(gpt4-turbo/gpt4/gemini/claude3/chatter/bing)", true))
-            );
-            bot.global_command_create(dpp::slashcommand("initialize", "仅服务器拥有者: 初始/重制所有用户", bot.me.id));
-            bot.global_command_create(dpp::slashcommand("mine", "查看自己的等级和经验值", bot.me.id));
-            bot.global_command_create(dpp::slashcommand("music", "创建自己的音乐频道", bot.me.id)
+            std::vector< dpp::slashcommand > slashCommands;
+            slashCommands.push_back(dpp::slashcommand("gpt", "仅服务器拥有者, 超级权限管理员或特级权限管理员才能使用此指令: 创建一个或者重新创建 GPT 频道", bot.me.id)
+                .add_option(dpp::command_option(dpp::co_string, "model", "要创建或者重新创建的GPT频道(gpt4-turbo/gpt4/gemini/claude3/chatter/bing)", true)));
+            slashCommands.push_back(dpp::slashcommand("initialize", "仅服务器拥有者: 初始/重制所有用户", bot.me.id));
+            slashCommands.push_back(dpp::slashcommand("mine", "查看自己的等级和经验值", bot.me.id));
+            slashCommands.push_back(dpp::slashcommand("music", "创建自己的音乐频道", bot.me.id)
                 .add_option(dpp::command_option(dpp::co_string, "channel-name", "音乐频道", true))
             );
-            bot.global_command_create(dpp::slashcommand("exp", "仅服务器拥有者, 超级权限管理员或特级权限管理员才能使用此指令: 调整用户经验值", bot.me.id)
+            slashCommands.push_back(dpp::slashcommand("exp", "仅服务器拥有者, 超级权限管理员或特级权限管理员才能使用此指令: 调整用户经验值", bot.me.id)
                 .add_option(dpp::command_option(dpp::co_string, "userid", "用户ID", true))
                 .add_option(dpp::command_option(dpp::co_string, "amount", "加多少或减多少经验值 一共5000级 每500经验是一级", true))
             );
-            bot.global_command_create(dpp::slashcommand("play", "点歌", bot.me.id)
+            slashCommands.push_back(dpp::slashcommand("play", "点歌", bot.me.id)
                 .add_option(dpp::command_option(dpp::co_string, "search", "歌曲链接/歌名/歌手", true))
             );
-            bot.global_command_create(dpp::slashcommand("set-supertitle", "自定义专属语音频道名称", bot.me.id)
+            slashCommands.push_back(dpp::slashcommand("set-supertitle", "自定义专属语音频道名称", bot.me.id)
                 .add_option(dpp::command_option(dpp::co_string, "supertitle", "专属语音频道名称", true))
             );
+            bot.global_bulk_command_create(slashCommands);
         }
     });
 
