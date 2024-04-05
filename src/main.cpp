@@ -322,7 +322,7 @@ int main(int argc, char const *argv[]) {
         std::string UserID = event.state.user_id.str();
         std::string ChannelID = event.state.channel_id.str();
         std::string GuildID = event.state.guild_id.str();
-        int TIME = 15;
+        int TIME = 30;
 
         std::cerr << "\n=============== Information ==============\n";
         std::cerr << "UserID: " << UserID << std::endl;
@@ -420,7 +420,7 @@ int main(int argc, char const *argv[]) {
                             dpp::snowflake memberUserID = dpp::snowflake(member.first);
                             dpp::voicestate Voice = voiceMembers[memberUserID];
                             if (Voice.channel_id.str() == "-1")
-                                ++amount;
+                                amount += 3;
                             if (Voice.self_stream())
                                 amount += 5;
                             if (Voice.self_video())
