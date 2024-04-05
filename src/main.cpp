@@ -87,7 +87,7 @@ int main(int argc, char const *argv[]) {
             // In the gptKeyMap, if the key already exist or the channel already exist
             if (gptKeyMap.find(channelID) != gptKeyMap.end() || has_channel(Guild, chatbot["id"])) {
                 gptKeyMap[static_cast<uint64_t>(chatbot["id"])] = configdocument[model];
-                event.reply("此服务器已存在 " + std::string(chatbot["fullname"]) + " 的频道");
+                event.reply(std::string(chatbot["fullname"]) + " 频道已经存在了, 并且我成功帮你设置啦! ");
                 co_return;
             }
             
@@ -140,20 +140,21 @@ int main(int argc, char const *argv[]) {
             }
 
             savefile(users_address, users);
+            event.reply("初始用户成功");
 
         } else if (event.command.get_command_name() == "play") {
             std::string song = std::get<std::string>(event.get_parameter("search"));
 	        dpp::guild* g = dpp::find_guild(event.command.guild_id);
  
             if (!g->connect_member_voice(event.command.get_issuing_user().id)) {
-                event.reply("You don't seem to be in a voice channel!");
+                event.reply("你不在一个语音频道里面");
                 co_return;
             }
 
             dpp::voiceconn* v = event.from->get_voice(event.command.guild_id);
 
 	        if (!v || !v->voiceclient || !v->voiceclient->is_ready()) {
-                event.reply("There was an issue with getting the voice channel. Make sure I'm in a voice channel!");
+                event.reply("嘿，听说连上语音频道有点问题。确保我在语音频道里哦!");
                 co_return;
             }
 
