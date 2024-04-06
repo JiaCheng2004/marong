@@ -207,8 +207,13 @@ int main(int argc, char const *argv[]) {
         } else if (event.command.get_command_name() == "set-supertitle") {
 
             std::string supertitle = std::get<std::string>(event.get_parameter("supertitle"));
-            set_supertitle(users, event.command.member.user_id.str(), supertitle);
-            event.reply("你的专属语音频道名称更改成了: **" + supertitle + "**");
+            
+            if (supertitle.length() > 0 && supertitle.length() < 50 ) {
+                set_supertitle(users, event.command.member.user_id.str(), supertitle);
+                event.reply("你的专属语音频道名称更改成了: **" + supertitle + "**");
+            } else {
+                event.reply("专属语音频道名称长度只能在 1 到 49 之间哦");
+            }
             
         } else if (event.command.get_command_name() == "music") {
             event.reply("敬请期待");
@@ -218,16 +223,17 @@ int main(int argc, char const *argv[]) {
     bot.on_guild_member_add([&] (const dpp::guild_member_add_t& event){
         dpp::guild_member newMember = event.added;
 
-        if (!newMember.get_user()->is_bot()) {
+        if (!((newMember.get_user())->is_bot()) && (!users.contains(newMember.user_id.str()))) {
             std::string userName = newMember.get_nickname();
 
             if (userName.length() == 0)
                 userName = newMember.get_user()->global_name;
 
             newUser(users, newMember.user_id.str(), userName);
-
             std::cerr << "- Finished registering: " << userName << std::endl;
         }
+
+        savefile(users_address, users);
     });
 
     bot.on_message_create([&](const dpp::message_create_t& event) -> dpp::task<void> {
@@ -389,7 +395,7 @@ int main(int argc, char const *argv[]) {
                     std::string channelName = get_supertitle(users, channel_map[ChannelID][0].first);
                     voiceChannel.set_name(channelName);
                     bot.channel_edit(voiceChannel);
-                    dpp::timer handle = bot.start_timer([&bot, voiceChannel, ChannelID, users, &timer_map, &channel_map, settings](dpp::timer h) mutable {
+                    dpp::timer handle = bot.start_timer([&bot, voiceChannel, ChannelID, &users, &timer_map, &channel_map, settings](dpp::timer h) mutable {
                         std::string ChannelName;
                         if (channel_map[ChannelID].empty()) {
                             ChannelName = settings["channels"]["public-voice-channels"][ChannelID]["name"];
@@ -445,7 +451,7 @@ int main(int argc, char const *argv[]) {
                     std::string channelName = get_supertitle(users, channel_map[ChannelID][0].first);
                     voiceChannel.set_name(channelName);
                     bot.channel_edit(voiceChannel);
-                    dpp::timer handle = bot.start_timer([&bot, voiceChannel, ChannelID, users, &timer_map, &channel_map, settings](dpp::timer h) mutable {
+                    dpp::timer handle = bot.start_timer([&bot, voiceChannel, ChannelID, &users, &timer_map, &channel_map, settings](dpp::timer h) mutable {
                         std::string ChannelName;
                         if (channel_map[ChannelID].empty()) {
                             ChannelName = settings["channels"]["public-voice-channels"][ChannelID]["name"];
