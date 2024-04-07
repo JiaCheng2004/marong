@@ -121,28 +121,35 @@ int main(int argc, char const *argv[]) {
             
         } else if (event.command.get_command_name() == "initialize") {
             
+            // Get the guild that contains all the information of this server
             dpp::guild Server = event.command.get_guild();
+            // get the members containers that contains all the information of every member
             dpp::members_container allMembers = Server.members;
 
+            // iterate through all the users
             for (auto& member_obj : allMembers) {
                 dpp::guild_member Member  = member_obj.second;
 
+                // if user is a bot then we don't deal with it
                 if (!Member.get_user()->is_bot()) {
                     std::string userName = Member.get_nickname();
 
                     if (userName.length() == 0)
                         userName = Member.get_user()->global_name;
 
+                    // create new user inside the database
                     newUser(users, Member.user_id.str(), userName);
 
                     std::cerr << "- Finished registering: " << userName << std::endl;
                 }
             }
 
+            // save the updated database file
             savefile(users_address, users);
             event.reply("初始用户成功");
 
         } else if (event.command.get_command_name() == "play") {
+            
             std::string song = std::get<std::string>(event.get_parameter("search"));
 	        dpp::guild* g = dpp::find_guild(event.command.guild_id);
  
@@ -161,7 +168,8 @@ int main(int argc, char const *argv[]) {
             handle_streaming(v, song);
 
         } else if (event.command.get_command_name() == "mine") {
-
+            
+            // retrieve all the level and exp information about user
             std::pair<int64_t, int64_t> info = getLvlExp(users, event.command.member.user_id);
 
             std::string userName = event.command.member.get_nickname();
@@ -172,7 +180,7 @@ int main(int argc, char const *argv[]) {
             event.reply("__**" + userName + "**__ 的等级信息:\n__Levels__: \"**" + std::to_string(info.first) + "**\"\n__Exps__: \"**" + std::to_string(info.second) + "**\"");
 
         } else if (event.command.get_command_name() == "exp") {
-
+            
             if ((event.command.get_guild().owner_id != event.command.get_issuing_user().id) && (!has_role(event.command.member, dpp::snowflake(settings["roles"]["SUPER_ADMIN"]["id"]))) && (!has_role(event.command.member, dpp::snowflake(settings["roles"]["PRIVILEGED_ADMIN"]["id"])))) {
                 event.reply("仅服务器拥有者, 超级权限管理员或特级权限管理员才能使用此指令");
                 co_return;
@@ -223,23 +231,26 @@ int main(int argc, char const *argv[]) {
     bot.on_guild_member_add([&] (const dpp::guild_member_add_t& event){
         dpp::guild_member newMember = event.added;
 
+        // If the new member is not a bot and it's not registered in database
         if (!((newMember.get_user())->is_bot()) && (!users.contains(newMember.user_id.str()))) {
             std::string userName = newMember.get_nickname();
 
             if (userName.length() == 0)
                 userName = newMember.get_user()->global_name;
 
+            // register new user in database
             newUser(users, newMember.user_id.str(), userName);
             std::cerr << "- Finished registering: " << userName << std::endl;
         }
 
+        // save the updated file
         savefile(users_address, users);
     });
 
     bot.on_message_create([&](const dpp::message_create_t& event) -> dpp::task<void> {
-        if (event.msg.author.is_bot()){
+        // if the message that was posted from a bot then return
+        if (event.msg.author.is_bot())
             co_return;
-        }
 
         // Convert message's channelID into uint64_t type
         uint64_t channelID = dpp::snowflake(event.msg.channel_id);
@@ -249,9 +260,8 @@ int main(int argc, char const *argv[]) {
             // If channelID is in gptKeyMap
 
             // If this message contains any stickers, return.
-            if (!event.msg.stickers.empty()) {
+            if (!event.msg.stickers.empty())
                 co_return;
-            }
 
             // Get the gptKey from gptKeyMap to make the api call
             std::string key = gptKeyMap.at(channelID);
@@ -325,6 +335,7 @@ int main(int argc, char const *argv[]) {
     });
 
     bot.on_voice_state_update([&](const dpp::voice_state_update_t& event) -> dpp::task<void> {
+        // If the user is not a registered user in the data base then return
         if (!users.contains(event.state.user_id.str()))
             co_return;
 
