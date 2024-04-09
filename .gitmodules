@@ -7,6 +7,18 @@
 [submodule "lib/ffmpeg"]
 	path = lib/ffmpeg
 	url = https://git.ffmpeg.org/ffmpeg.git
+[submodule "lib/CogLink"]
+	path = lib/CogLink
+	url = https://github.com/PerformanC/CogLink
+[submodule "lib/yt-search"]
+	path = lib/yt-search
+	url = git@github.com:Neko-Life/yt-search.h.git
+[submodule "lib/spotify"]
+	path = lib/spotify
+	url = git@github.com:spotDL/spotify-downloader.git
+[submodule "lib/soundcloud"]
+	path = lib/soundcloud
+	url = git@github.com:flyingrub/scdl.git
 [submodule "lib/dpp"]
 	path = lib/dpp
 	url = git@github.com:brainboxdotcc/DPP.git
